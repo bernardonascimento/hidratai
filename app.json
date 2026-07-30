@@ -1,18 +1,27 @@
 {
   "expo": {
-    "name": "beba-agua",
-    "slug": "beba-agua",
+    "name": "Hidrataí",
+    "slug": "hidratai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bebaagua",
+    "scheme": "hidratai",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.bernardo.hidratai",
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "pt-BR",
+        "CFBundleLocalizations": [
+          "pt-BR"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.bernardo.hidratai",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#C9EBFD",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -24,13 +33,23 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#C9EBFD",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 220
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#1CB0F6",
+          "defaultChannel": "lembretes",
+          "enableBackgroundRemoteNotifications": false
         }
       ]
     ],
