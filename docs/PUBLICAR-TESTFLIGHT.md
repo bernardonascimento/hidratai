@@ -84,15 +84,36 @@ O build leva ~15-25 min na fila gratuita. Ao final ele imprime a URL do `.ipa`.
 
 ## 4. Criar o app no App Store Connect
 
-Duas opções — a segunda é menos trabalho.
+**Decida isto antes de rodar o submit** — o idioma primário e o SKU não são
+perguntados, e o SKU não tem volta.
 
-**Opção A — deixar o EAS criar.** Pule direto para o passo 5. Como o `ascAppId` não
-está no `eas.json`, o `eas submit` roda em modo interativo, percebe que o app não
-existe e oferece criá-lo. Aceite e responda o nome (`Hidrataí`), o idioma principal
-(Português (Brasil)) e o SKU (pode ser `hidratai`).
+**Opção A — deixar o EAS criar, mas configurando antes.** O `eas submit` percebe que
+o app não existe e oferece criá-lo. O que ele **não faz** é perguntar o idioma e o
+SKU: no schema do eas-cli o campo `language` tem `.default('en-US')`, então o default
+preenche o valor e não sobra pergunta — o app nasce em inglês, com um SKU gerado
+aleatoriamente. Para evitar isso, preencha no `eas.json` **antes** do submit:
+
+```json
+"submit": {
+  "production": {
+    "ios": {
+      "appleTeamId": "8A3KK4PTA6",
+      "appName": "Hidrataí",
+      "language": "pt-BR",
+      "sku": "hidratai"
+    }
+  }
+}
+```
+
+Se já passou disso e o app nasceu em inglês: o **idioma dá para trocar** em App Store
+Connect → o app → Informações do app. Primeiro adicione a localização Português
+(Brasil) no seletor de idioma do topo, senão ela não aparece como opção de primário.
+O **SKU é permanente** — mas é interno, aparece só nos seus relatórios de vendas,
+nunca para o usuário e nunca na App Store. Não vale recriar o app por causa dele.
 
 **Opção B — criar à mão** em [appstoreconnect.apple.com](https://appstoreconnect.apple.com)
-→ Apps → **+** → Novo app:
+→ Apps → **+** → Novo app. Mais dedo, zero surpresa:
 
 | Campo | Valor |
 |---|---|
