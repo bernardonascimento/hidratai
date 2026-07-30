@@ -1,0 +1,42 @@
+# Release do Hidrataí — dispara ao publicar uma tag de versão.
+#   git tag v1.0.0
+#   git push origin v1.0.0
+#
+# Faz o build de produção do iOS e envia para o App Store Connect (TestFlight).
+#
+# Isto é OPCIONAL e não é o caminho do primeiro envio. Para o primeiro ciclo, siga
+# `docs/PUBLICAR-TESTFLIGHT.md` e rode os comandos à mão: o build inicial precisa de
+# login interativo na conta Apple para criar o bundle id, o certificado de
+# distribuição e o provisioning profile, e o submit precisa criar o app no App Store
+# Connect. Workflow por tag só faz sentido depois que isso existe.
+#
+# Pré-requisitos para este arquivo funcionar:
+#   1. Conectar o repositório GitHub ao projeto EAS
+#      (expo.dev → hidratai → Project settings → GitHub) e instalar o GitHub App.
+#   2. Credenciais de iOS já criadas por um build manual anterior.
+#   3. `ascAppId` preenchido em `submit.production.ios` no eas.json — sem ele o
+#      submit roda em modo não-interativo e falha, porque não tem quem responder.
+
+name: Release (build + submit por tag)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build_ios:
+    name: Build iOS (produção)
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    name: Enviar para o App Store Connect
+    needs: [build_ios]
+    type: submit
+    params:
+      platform: ios
+      profile: production
+      build_id: ${{ needs.build_ios.outputs.build_id }}

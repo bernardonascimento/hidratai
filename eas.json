@@ -20,5 +20,12 @@
     "production": {
       "autoIncrement": true
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleTeamId": "8A3KK4PTA6"
+      }
+    }
   }
 }

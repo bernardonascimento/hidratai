@@ -112,6 +112,21 @@ notificação — este com mock do `expo-notifications`, verificando as invarian
 lembrete não secar: nenhum horário com dois donos, total abaixo do limite do iOS e
 cancelamento antes de reagendar.
 
+## Publicar no TestFlight
+
+O `eas.json` já traz os perfis de build e o de submit; o passo a passo do primeiro
+envio — criar o projeto no EAS, criar o app no App Store Connect e subir — está em
+[`docs/PUBLICAR-TESTFLIGHT.md`](docs/PUBLICAR-TESTFLIGHT.md). Depois do primeiro ciclo,
+publicar é uma linha:
+
+```bash
+npx eas-cli@latest build --platform ios --profile production --auto-submit
+```
+
+O número de build é controlado pelo servidor (`appVersionSource: "remote"`), então
+nunca se edita `buildNumber` à mão — só o `version` do `app.json` quando a versão
+visível muda.
+
 ## Uso
 
 1. **Onboarding** em 5 passos: peso, rotina de sono, estilo de vida, a meta calculada e a
