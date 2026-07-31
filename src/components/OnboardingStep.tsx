@@ -94,7 +94,14 @@ export function OnboardingStep({
             <View style={{ flexGrow: 2 }} />
           </View>
 
-          <Button label={ctaLabel} onPress={onCta} />
+          {/* `pt-4` fixo, e não só o espaçador elástico acima.
+              Os `flexGrow` colapsam para zero quando o conteúdo é mais alto que o vão
+              — foi o que aconteceu no iPhone SE com a escala tipográfica nova: o
+              parágrafo ficou a 0,5pt do botão, colado. Uma folga fixa não colapsa,
+              então o CTA nunca mais encosta no texto, por comprido que ele fique. */}
+          <View className="pt-4">
+            <Button label={ctaLabel} onPress={onCta} />
+          </View>
           {secondary && <View className="pt-3">{secondary}</View>}
         </ScrollView>
       </SafeAreaView>

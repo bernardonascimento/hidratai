@@ -29,6 +29,36 @@ module.exports = {
         body: ['Nunito_600SemiBold'],
         bodyBold: ['Nunito_800ExtraBold'],
       },
+      /**
+       * Escala tipográfica **própria**, um degrau acima da padrão do Tailwind.
+       *
+       * Motivo: no aparelho real (não no simulador) o texto do app estava pequeno —
+       * as 114 classes `text-*` herdavam a escala do Tailwind, que é pensada para web
+       * em desktop, onde o olho está a 60cm da tela. No celular, a 30cm e em
+       * movimento, 14px de corpo é pouco.
+       *
+       * O aumento é maior embaixo e menor em cima (14→16 são +14%; 60→62 são +3%),
+       * porque a reclamação é do texto pequeno — os números gigantes já se resolviam.
+       * Isso comprime a hierarquia de propósito: a diferença entre corpo e título
+       * diminui, e é uma troca aceitável para o texto de leitura crescer.
+       *
+       * Os pares são [fontSize, lineHeight]. O lineHeight tem de vir junto: sem ele o
+       * NativeWind mantém a entrelinha da escala antiga e o texto grande fica
+       * apertado verticalmente. Nos tamanhos de display (4xl acima) a entrelinha é
+       * quase igual à fonte, porque ali é sempre uma linha só.
+       */
+      fontSize: {
+        xs: ['13px', '18px'],
+        sm: ['16px', '22px'],
+        base: ['18px', '26px'],
+        lg: ['20px', '28px'],
+        xl: ['22px', '30px'],
+        '2xl': ['26px', '34px'],
+        '3xl': ['32px', '38px'],
+        '4xl': ['38px', '44px'],
+        '5xl': ['50px', '54px'],
+        '6xl': ['62px', '66px'],
+      },
       borderRadius: {
         pill: '9999px',
       },

@@ -462,16 +462,16 @@ export function ProgressBottle({
                 y={TEXT_Y}
                 textAnchor="middle"
                 fontFamily="Fredoka_700Bold"
-                fontSize={36}
+                fontSize={38}
                 fill={cor}>
                 {par.value}
               </SvgText>
               <SvgText
                 x={CX}
-                y={TEXT_Y + 22}
+                y={TEXT_Y + 24}
                 textAnchor="middle"
                 fontFamily="Nunito_600SemiBold"
-                fontSize={14}
+                fontSize={16}
                 fill={corSub}>
                 {`de ${par.total} ${par.unit}`}
               </SvgText>

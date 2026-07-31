@@ -103,14 +103,19 @@ export default function Lembretes() {
                   {`Das ${formatClock(slots[0])} às ${formatClock(slots.at(-1) ?? 0)}`}
                 </Text>
               </View>
+              {/* Texto curto de propósito. Com a escala tipográfica nova, a versão
+                  longa — que citava o espaçamento por igual e a folga nas pontas —
+                  ocupava quatro linhas aqui e outras quatro embaixo, e no iPhone SE o
+                  parágrafo encostava no botão. O horário de início e fim, que é a
+                  informação que importa, já está na linha de cima. */}
               <Text maxFontSizeMultiplier={1.3} className="font-body text-base text-texto-soft">
-                {`${slots.length} avisos leves ao longo do dia, espaçados por igual entre a hora que você acorda e a hora de dormir, com folga nas duas pontas.`}
+                {`${slots.length} avisos leves, espaçados por igual.`}
               </Text>
             </View>
 
             <Text maxFontSizeMultiplier={1.3} className="text-center font-body text-base text-texto-soft">
-              Nada de aviso de madrugada, e quando você bate a meta do dia a Gotinha para de
-              avisar até amanhã. Dá para mudar tudo isso em Ajustes, quando quiser.
+              Nada de madrugada, e a Gotinha para quando você bate a meta. Dá para mudar em
+              Ajustes.
             </Text>
           </>
         ) : (

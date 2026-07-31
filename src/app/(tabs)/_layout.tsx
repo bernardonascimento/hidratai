@@ -93,6 +93,14 @@ export default function TabsLayout() {
           paddingHorizontal: 16,
         },
         tabBarLabelStyle: {
+          /** O único texto do app que **não** acompanhou a escala tipográfica nova, e
+           *  não por escolha: em 12 o rótulo "Conquistas" trunca para "Conquist…" no
+           *  iPhone SE. A conta é apertada — 375pt de tela menos os 32 de
+           *  `paddingHorizontal` dão 68,6pt por aba, e as dez letras em Fredoka 12
+           *  pedem ~69. Em 11 pedem ~63 e caibem.
+           *
+           *  Para crescer aqui seria preciso encurtar o rótulo ou devolver o padding
+           *  lateral — e o padding foi pedido justamente para as abas desgrudarem. */
           fontFamily: 'Fredoka_600SemiBold',
           fontSize: 11,
         },

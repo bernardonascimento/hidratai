@@ -26,7 +26,7 @@ export function WeekBars({ slots }: Props) {
   const hoje = dayKey();
 
   return (
-    <View className="flex-row items-end justify-between gap-2" style={{ height: ALTURA + 34 }}>
+    <View className="flex-row items-end justify-between gap-1.5" style={{ height: ALTURA + 34 }}>
       {slots.map((slot) => {
         const ehHoje = slot.date === hoje;
         const preenchido = Math.min(1, slot.ratio);
@@ -71,12 +71,21 @@ export function WeekBars({ slots }: Props) {
             </View>
 
             {/* Hoje ganha pastilha, não só cor: mudança de cor sozinha some para quem
-                não distingue tons, e é a única pista de onde a semana está. */}
+                não distingue tons, e é a única pista de onde a semana está.
+
+                O `px-1` é apertado de propósito. Com `px-2`, os 16pt de padding
+                comiam quase metade dos ~36pt da coluna no iPhone SE, e "seg" com a
+                escala tipográfica nova quebrava em duas linhas ("se" / "g"). Encurtar
+                para duas letras não era saída: "seg"/"sex" e "qua"/"qui" colidiriam.
+
+                `numberOfLines={1}` é a garantia — mesmo que alguém aumente a fonte ou
+                troque a abreviação, o rótulo nunca volta a quebrar linha. */}
             <View
-              className={`items-center justify-center rounded-pill px-2 py-0.5 ${
+              className={`items-center justify-center rounded-pill px-1 py-0.5 ${
                 ehHoje ? 'bg-agua-tint' : ''
               }`}>
               <Text
+                numberOfLines={1}
                 maxFontSizeMultiplier={1.2}
                 className={`text-sm ${
                   ehHoje
