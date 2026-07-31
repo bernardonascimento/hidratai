@@ -1,7 +1,21 @@
 import '../global.css';
 
-import { Fredoka_600SemiBold, Fredoka_700Bold, useFonts } from '@expo-google-fonts/fredoka';
-import { Nunito_600SemiBold, Nunito_800ExtraBold } from '@expo-google-fonts/nunito';
+/**
+ * Fontes importadas por **subpath**, um peso por linha — nunca da raiz do pacote.
+ *
+ * O `index.js` da raiz de `@expo-google-fonts/*` é um barrel que faz `require()` de
+ * cada `.ttf` da família. `require` de asset não é tree-shakeable no Metro, então
+ * importar de lá arrasta a família inteira para o bundle mesmo desestruturando dois
+ * nomes: eram 21 arquivos e 2,28 MB, incluindo todos os itálicos do Nunito, que o app
+ * não usa em nenhum lugar.
+ *
+ * O `useFonts` vem de `expo-font` porque antes vinha de dentro do barrel do Fredoka —
+ * ou seja, importar o hook era motivo suficiente para carregar a família toda.
+ */
+import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka/600SemiBold';
+import { Fredoka_700Bold } from '@expo-google-fonts/fredoka/700Bold';
+import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
+import { useFonts } from 'expo-font';
 import * as Notifications from 'expo-notifications';
 import { DefaultTheme, Stack, ThemeProvider, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -56,11 +70,17 @@ function AvisoPaisagem() {
 }
 
 export default function RootLayout() {
+  /**
+   * Três pesos, não quatro. O `Nunito_800ExtraBold` estava aqui e no
+   * `tailwind.config.js` como `font-bodyBold`, e **nenhuma tela o usava** — 129 KB
+   * carregados no boot, dentro do gate que segura a splash, para nada. Se algum dia
+   * o corpo precisar de um negrito, o caminho é voltar as duas pontas juntas: o peso
+   * aqui e a família na config.
+   */
   const [fontesCarregadas] = useFonts({
     Fredoka_600SemiBold,
     Fredoka_700Bold,
     Nunito_600SemiBold,
-    Nunito_800ExtraBold,
   });
   const { width, height } = useWindowDimensions();
   const paisagemApertada = width > height && height < 520;

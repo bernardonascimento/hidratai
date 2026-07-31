@@ -23,11 +23,19 @@ module.exports = {
         canvas: '#FFFFFF',
         moldura: '#E8EAED',
       },
+      /**
+       * Em React Native cada arquivo de fonte é uma **família própria**, então o peso
+       * vem pelo nome — nunca por `font-bold`/`fontWeight`, que no iOS produziria um
+       * negrito sintético por cima de um arquivo que já tem peso desenhado.
+       *
+       * Não existe `bodyBold`: o `Nunito_800ExtraBold` estava declarado aqui e não era
+       * usado por nenhuma tela. Para reintroduzir, é preciso voltar as duas pontas — a
+       * família aqui e o peso no `useFonts` do `_layout`.
+       */
       fontFamily: {
         display: ['Fredoka_600SemiBold'],
         displayBold: ['Fredoka_700Bold'],
         body: ['Nunito_600SemiBold'],
-        bodyBold: ['Nunito_800ExtraBold'],
       },
       /**
        * Escala tipográfica **própria**, um degrau acima da padrão do Tailwind.

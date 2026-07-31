@@ -48,6 +48,25 @@ Pontos que mais se erra:
   em JS para onde `className` não chega (SVG e estilos do Reanimated).
 - `className` só em componentes core do RN (View/Text/Pressable/ScrollView).
   Em `Animated.View`, use `style` com os tokens — NativeWind não os envolve.
+- **A escala tipográfica é nossa**, definida em `fontSize` no `tailwind.config.js`
+  com pares `[fontSize, lineHeight]` — um degrau acima da padrão do Tailwind, que é
+  pensada para desktop. Ao acrescentar um degrau, passe a entrelinha junto: sem ela o
+  NativeWind mantém a da escala antiga.
+- **Fonte se importa por subpath, um peso por linha**, e `useFonts` vem de
+  `expo-font`:
+  ```js
+  import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka/600SemiBold';
+  ```
+  Nunca da raiz do pacote. O `index.js` da raiz é um barrel que faz `require()` de
+  cada `.ttf`, e `require` de asset não é tree-shakeable no Metro — importar de lá
+  levava 21 arquivos e 2,28 MB para o bundle em vez de 3 e 0,22 MB.
+- **Peso de fonte vem pelo nome da família, nunca por `font-bold`/`fontWeight`.** Em
+  RN cada arquivo é uma família própria (`font-display`, `font-displayBold`,
+  `font-body`). `fontWeight` em cima disso gera negrito sintético no iOS, engordado
+  por algoritmo sobre um arquivo que já tem peso desenhado.
+- Cuidado com texto em coluna estreita: `WeekBars` e os rótulos do tabBar são os dois
+  lugares que **não** acompanham a escala tipográfica, por falta física de largura.
+  Ao mexer em um deles, meça no iPhone SE (375pt), não no simulador maior.
 - Estado em Zustand com `persist` + AsyncStorage (`src/store/useWater.ts`).
 - Haptics é enhancement progressivo: sempre via `src/lib/haptics.ts`, que
   silencia falhas e não roda no web.
