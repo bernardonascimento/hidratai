@@ -13,7 +13,13 @@ export const ONBOARDING_STEPS = 5;
 type Props = {
   /** 1-based, para a barra de pills. */
   step: number;
-  /** Fala da Gotinha: no máximo oito palavras (§5.1). */
+  /**
+   * Fala da Gotinha. O limite útil é **~20 caracteres**, não as oito palavras do §5.1:
+   * o balão fica ao lado de uma Gotinha de 76pt, e no iPhone SE sobram ~207pt de área
+   * de texto, que o Fredoka nesse tamanho gasta a ~10,1pt por caractere. Acima disso
+   * quebra em duas linhas — não é defeito, o balão lida bem, mas as cinco falas do
+   * onboarding ficam desalinhadas entre si.
+   */
   speech: string;
   children: ReactNode;
   ctaLabel: string;

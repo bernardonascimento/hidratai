@@ -65,7 +65,7 @@ export default function Lembretes() {
     <OnboardingStep
       step={5}
       mood="animada"
-      speech="Posso te lembrar de beber?"
+      speech="Posso te lembrar?"
       ctaLabel={pedindo ? 'Um instante...' : 'Quero ser lembrado'}
       onCta={() => {
         if (pedindo) return;
