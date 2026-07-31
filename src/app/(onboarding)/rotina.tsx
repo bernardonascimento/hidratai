@@ -23,7 +23,7 @@ export default function Rotina() {
   return (
     <OnboardingStep
       step={2}
-      speech="Sua rotina de sono?"
+      speech="Qual sua rotina?"
       ctaLabel="Próximo"
       onCta={() => router.push('/estilo')}>
       {/* Os dois horários num bloco só: eles não são duas perguntas independentes — é
