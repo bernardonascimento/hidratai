@@ -34,6 +34,18 @@ export function previousDay(key: string): string {
 }
 
 /**
+ * Dia da semana de uma chave de dia. `0` = domingo … `6` = sábado, igual ao
+ * `getDay()` do JS e igual ao que `restDay` guarda.
+ *
+ * Recebe a **chave do dia lógico**, não um `Date`: um registro à 01:00 pertence ao dia
+ * anterior, e derivar o dia da semana do relógio daria a resposta errada nessas horas.
+ */
+export function weekdayOf(key: string): number {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
+
+/**
  * Meio-dia local do dia dado. Usado como `at` sintético quando um registro
  * antigo não tem hora (migração — §0.1.3).
  */

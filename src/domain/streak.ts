@@ -1,4 +1,4 @@
-import { dayKey, previousDay } from '@/lib/date';
+import { dayKey, previousDay, weekdayOf } from '@/lib/date';
 
 import type { DayLog } from './types';
 
@@ -20,11 +20,6 @@ export type StreakInput = StreakState & {
   restDay: number | null;
   today?: string;
 };
-
-function diaDaSemana(key: string): number {
-  const [y, m, d] = key.split('-').map(Number);
-  return new Date(y, m - 1, d).getDay();
-}
 
 /** Lista os dias de `depois` até `antes` (exclusivo nas duas pontas), em ordem. */
 function diasEntre(depois: string, antes: string): string[] {
@@ -64,7 +59,7 @@ export function recalcStreak(input: StreakInput): StreakState {
   // conta como falha — só o passado fechado.
   for (const dia of diasEntre(lastMetDate, hoje)) {
     if (days[dia]?.metGoal) continue;
-    if (restDay !== null && diaDaSemana(dia) === restDay) continue;
+    if (restDay !== null && weekdayOf(dia) === restDay) continue;
 
     if (freezesAvailable > 0) {
       freezesAvailable -= 1;
@@ -113,7 +108,7 @@ export function applyMetGoal(input: StreakInput & { date: string }): MetGoalResu
     input.lastMetDate === ontem ||
     days[ontem]?.metGoal === true ||
     freezesUsedOn.includes(ontem) ||
-    (restDay !== null && diaDaSemana(ontem) === restDay);
+    (restDay !== null && weekdayOf(ontem) === restDay);
 
   streak = ontemContou ? streak + 1 : 1;
 

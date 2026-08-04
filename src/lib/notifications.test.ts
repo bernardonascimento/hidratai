@@ -7,8 +7,9 @@
  */
 
 import { DEFAULT_INTERVAL_MIN } from '@/domain/reminders';
-import { dayKey, dayKeyOf } from '@/lib/date';
+import { dayKey, dayKeyOf, weekdayOf } from '@/lib/date';
 import { syncReminders } from '@/lib/notifications';
+import { useGamification } from '@/store/useGamification';
 import { useProfile } from '@/store/useProfile';
 import { useWater } from '@/store/useWater';
 
@@ -53,6 +54,7 @@ beforeEach(() => {
   mockCanceladas = 0;
   mockPermissao = { granted: true, canAskAgain: true };
   useWater.setState({ days: {}, goalMl: 2500 });
+  useGamification.setState({ restDay: null });
   ligarLembretes();
 });
 
@@ -192,5 +194,57 @@ describe('syncReminders — meta batida', () => {
     expect(mockAgendadas.filter((a) => a.trigger.type === 'daily').length).toBeGreaterThan(0);
     // E amanhã volta ao normal.
     expect(mockAgendadas.filter((a) => a.trigger.type === 'date').length).toBeGreaterThan(0);
+  });
+});
+
+describe('syncReminders — dia livre', () => {
+  /** Datas da camada A que caem no dia da semana dado. */
+  function datasNoDiaDaSemana(dia: number) {
+    return mockAgendadas.filter(
+      (a) =>
+        a.trigger.type === 'date' &&
+        weekdayOf(dayKeyOf((a.trigger.date as Date).getTime())) === dia,
+    );
+  }
+
+  it('não agenda a camada precisa no dia livre', async () => {
+    // Escolhe como livre um dia da semana que a janela de 3 dias realmente cobre,
+    // senão o teste passaria por não haver nada para pular.
+    useGamification.setState({ restDay: null });
+    await syncReminders();
+    const cobertos = new Set(
+      mockAgendadas
+        .filter((a) => a.trigger.type === 'date')
+        .map((a) => weekdayOf(dayKeyOf((a.trigger.date as Date).getTime()))),
+    );
+    const livre = [...cobertos][0];
+    expect(livre).toBeDefined();
+
+    useGamification.setState({ restDay: livre });
+    await syncReminders();
+
+    expect(datasNoDiaDaSemana(livre)).toHaveLength(0);
+  });
+
+  it('mantém os perenes no dia livre — a folga é da ofensiva, não do corpo', async () => {
+    useGamification.setState({ restDay: new Date().getDay() });
+    await syncReminders();
+
+    // Os 4 `DAILY` continuam de pé: no dia livre a pessoa recebe o mínimo, não zero.
+    expect(mockAgendadas.filter((a) => a.trigger.type === 'daily').length).toBeGreaterThan(0);
+  });
+
+  it('sem dia livre, nenhum dia da semana é pulado', async () => {
+    useGamification.setState({ restDay: null });
+    await syncReminders();
+
+    const porDia = new Set(
+      mockAgendadas
+        .filter((a) => a.trigger.type === 'date')
+        .map((a) => dayKeyOf((a.trigger.date as Date).getTime())),
+    );
+    // Hoje pode cair fora por já ter passado do último horário, mas os outros dois
+    // dias da janela precisam estar lá.
+    expect(porDia.size).toBeGreaterThanOrEqual(2);
   });
 });

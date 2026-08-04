@@ -424,9 +424,14 @@ export default function Ajustes() {
               icone={<Snowflake size={20} color={tokens.agua} strokeWidth={2.5} />}
               titulo="Dia livre"
             />
+            {/* O texto diz o que o dia livre faz **e o que não faz**.
+                A versão anterior falava só da ofensiva, e o rótulo "Dia livre" fez
+                esperar folga geral — chegou reclamação de receber lembrete no domingo
+                marcado. Prometer menos que o rótulo é o que gera essa surpresa. */}
             <Text className="pt-2 font-body text-sm text-texto-soft">
-              Um dia da semana que não quebra a ofensiva. Para quem tem uma rotina que
-              muda — e não deveria perder a sequência por isso.
+              Um dia da semana que não quebra a ofensiva. Você ainda recebe alguns avisos:
+              beber água no dia livre continua importando — a folga é da sequência, não do
+              corpo.
             </Text>
 
             <View className="flex-row gap-1.5 pt-3">

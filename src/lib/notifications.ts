@@ -3,7 +3,8 @@ import { Platform } from 'react-native';
 
 import { WATER_DRINK_ID, findDrink } from '@/domain/drinks';
 import { hourMinute, momentoDe, perennialSlots, phraseFor, reminderSlots } from '@/domain/reminders';
-import { dayKey } from '@/lib/date';
+import { dayKey, weekdayOf } from '@/lib/date';
+import { useGamification } from '@/store/useGamification';
 import { useProfile } from '@/store/useProfile';
 import { useWater } from '@/store/useWater';
 
@@ -185,6 +186,18 @@ export async function syncReminders(): Promise<SyncResult> {
    */
   const fracaoHoje = metaHoje > 0 ? totalHoje / metaHoje : 0;
 
+  /**
+   * Dia livre: `0` = domingo … `6` = sábado, ou `null`.
+   *
+   * No dia livre a camada A não agenda nada, e sobram só os 4 perenes. É uma escolha
+   * de produto, não uma limitação: silêncio total exigiria trocar o `DAILY` perene por
+   * seis `WEEKLY` por slot, o que levaria o total pendente de 37 para 57 no pior caso —
+   * perto demais do limite de 64 do iOS, que é justamente por onde este tipo de app
+   * seca. E beber água no dia livre continua importando: o dia é de folga da
+   * **ofensiva**, não do corpo.
+   */
+  const { restDay } = useGamification.getState();
+
   let agendadas = 0;
 
   // Camada B — perene. Fica de pé mesmo com a meta batida hoje: é o preço de
@@ -221,6 +234,15 @@ export async function syncReminders(): Promise<SyncResult> {
   for (let dia = 0; dia < DIAS_PRECISOS; dia += 1) {
     // Meta batida cala o resto de **hoje**; amanhã começa de novo.
     if (dia === 0 && metaBatidaHoje) continue;
+
+    /**
+     * Dia livre: a camada A não agenda, e o dia fica só com os 4 perenes.
+     *
+     * O dia da semana sai da **chave do dia lógico**, não de `data.getDay()`. Hoje dá
+     * no mesmo, porque nenhum slot cai antes das 03:00 — mas derivar do relógio seria
+     * uma bomba armada para quem configurar uma janela que atravesse a virada.
+     */
+    if (restDay !== null && weekdayOf(dayKey(dataDoSlot(dia, 12 * 60))) === restDay) continue;
 
     for (const minuto of slots) {
       if (ehPerene.has(minuto)) continue;
