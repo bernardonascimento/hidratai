@@ -1,5 +1,8 @@
 import {
+  firstMonthWithData,
   monthGrid,
+  monthLabel,
+  shiftMonth,
   shortDate,
   statsOf,
   weekSlots,
@@ -271,5 +274,42 @@ describe('vista de Ano em mais de um ano', () => {
     // É o que faz o seletor não aparecer no primeiro ano de uso.
     const soEsteAno = { '2026-01-05': dia('2026-01-05', 2000) };
     expect(yearsWithData(soEsteAno, '2026-03-01')).toHaveLength(1);
+  });
+});
+
+describe('navegação por mês', () => {
+  it('shiftMonth vira o ano nas duas direções', () => {
+    // Dezembro→janeiro e janeiro→dezembro são exatamente onde a conta à mão erra.
+    expect(shiftMonth('2025-12', 1)).toBe('2026-01');
+    expect(shiftMonth('2026-01', -1)).toBe('2025-12');
+    expect(shiftMonth('2026-03', -5)).toBe('2025-10');
+  });
+
+  it('monthGrid mostra o mês pedido, não o de hoje', () => {
+    const days = { '2025-12-10': dia('2025-12-10', 2200) };
+    const grade = monthGrid(days, 2000, '2026-02-15', null, '2025-12');
+
+    expect(grade.month).toBe('2025-12');
+    expect(grade.slots).toHaveLength(31);
+    expect(grade.slots.find((s) => s.date === '2025-12-10')?.hydrationMl).toBe(2200);
+  });
+
+  it('mês passado não tem dia futuro', () => {
+    const grade = monthGrid({}, 2000, '2026-02-15', null, '2025-12');
+    expect(grade.slots.some((s) => s.future)).toBe(false);
+  });
+
+  it('firstMonthWithData acha o mês mais antigo, e cai no corrente sem dado', () => {
+    const days = {
+      '2026-03-02': dia('2026-03-02', 1000),
+      '2025-11-30': dia('2025-11-30', 1000),
+    };
+    expect(firstMonthWithData(days, '2026-08-04')).toBe('2025-11');
+    expect(firstMonthWithData({}, '2026-08-04')).toBe('2026-08');
+  });
+
+  it('monthLabel escreve o mês por extenso com o ano', () => {
+    expect(monthLabel('2026-08')).toBe('agosto de 2026');
+    expect(monthLabel('2025-12')).toBe('dezembro de 2025');
   });
 });

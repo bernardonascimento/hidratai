@@ -21,7 +21,10 @@ import { WeekBars } from '@/components/WeekBars';
 import { YearBars } from '@/components/YearBars';
 import { WATER_DRINK_ID } from '@/domain/drinks';
 import {
+  firstMonthWithData,
   monthGrid,
+  monthLabel,
+  shiftMonth,
   shortDate,
   statsOf,
   weekSlots,
@@ -69,8 +72,9 @@ export default function Historico() {
   const totalHoje = useTodayHydrationMl();
   const ontem = useYesterdayLog();
   const [vista, setVista] = useState<Vista>('semana');
-  /** `null` = o ano corrente. Só sai disso quem toca nas setas. */
+  /** `null` = o período corrente. Só sai disso quem toca nas setas. */
   const [anoEscolhido, setAnoEscolhido] = useState<number | null>(null);
+  const [mesEscolhido, setMesEscolhido] = useState<string | null>(null);
   const [dia, setDia] = useState<Dia>('hoje');
 
   const olhandoOntem = dia === 'ontem';
@@ -104,12 +108,17 @@ export default function Historico() {
 
   // `dayKey()` explícito nas duas: o padrão do domínio também é ele, mas passar o
   // `restDay` na quarta posição exige preencher a terceira.
-  const semana = weekSlots(days, goalMl, dayKey(), restDay);
-  const grade = monthGrid(days, goalMl, dayKey(), restDay);
-  const anosDisponiveis = yearsWithData(days, dayKey());
+  const hoje = dayKey();
+  const mesCorrente = hoje.slice(0, 7);
+  const mesVisto = mesEscolhido ?? mesCorrente;
+  const primeiroMes = firstMonthWithData(days, hoje);
+
+  const semana = weekSlots(days, goalMl, hoje, restDay);
+  const grade = monthGrid(days, goalMl, hoje, restDay, mesVisto);
+  const anosDisponiveis = yearsWithData(days, hoje);
   const anoAtual = anosDisponiveis[anosDisponiveis.length - 1];
   const anoVisto = anoEscolhido ?? anoAtual;
-  const ano = yearMonths(days, dayKey(), anoVisto);
+  const ano = yearMonths(days, hoje, anoVisto);
   const iAno = anosDisponiveis.indexOf(anoVisto);
   // As estatísticas seguem o recorte escolhido; no ano, o mês corrente é o recorte
   // mais próximo que existe — a média anual seria outra conta.
@@ -133,6 +142,16 @@ export default function Historico() {
 
           {vista === 'mes' && (
             <Card>
+              {/* Aparece só quando há mês anterior para ver, pela mesma razão do ano. */}
+              {primeiroMes < mesCorrente && (
+                <SeletorPeriodo
+                  rotulo={monthLabel(mesVisto)}
+                  temAnterior={mesVisto > primeiroMes}
+                  temProximo={mesVisto < mesCorrente}
+                  onAnterior={() => setMesEscolhido(shiftMonth(mesVisto, -1))}
+                  onProximo={() => setMesEscolhido(shiftMonth(mesVisto, 1))}
+                />
+              )}
               <MonthCalendar grade={grade} />
             </Card>
           )}
@@ -143,25 +162,18 @@ export default function Historico() {
                   ele seria um cabeçalho com duas setas desligadas — controle que não
                   controla nada. */}
               {anosDisponiveis.length > 1 && (
-                <View className="flex-row items-center justify-between pb-3">
-                  <SetaAno
-                    direcao="anterior"
-                    disponivel={iAno > 0}
-                    onPress={() => setAnoEscolhido(anosDisponiveis[iAno - 1])}
-                  />
-                  <Text
-                    maxFontSizeMultiplier={1.2}
-                    className="font-displayBold text-xl text-texto">
-                    {anoVisto}
-                  </Text>
-                  <SetaAno
-                    direcao="proximo"
-                    disponivel={iAno < anosDisponiveis.length - 1}
-                    onPress={() => setAnoEscolhido(anosDisponiveis[iAno + 1])}
-                  />
-                </View>
+                <SeletorPeriodo
+                  rotulo={String(anoVisto)}
+                  temAnterior={iAno > 0}
+                  temProximo={iAno < anosDisponiveis.length - 1}
+                  onAnterior={() => setAnoEscolhido(anosDisponiveis[iAno - 1])}
+                  onProximo={() => setAnoEscolhido(anosDisponiveis[iAno + 1])}
+                />
               )}
-              <YearBars meses={ano} goalMl={goalMl} mesAtual={grade.month} />
+              {/* `mesCorrente` e **não** `grade.month`: agora a grade do mês navega, e passar
+                  `grade.month` faria a aba de Ano destacar o mês que o usuário estava
+                  olhando na aba de Mês. Acoplamento silencioso entre duas vistas. */}
+              <YearBars meses={ano} goalMl={goalMl} mesAtual={mesCorrente} />
             </Card>
           )}
 
@@ -264,16 +276,52 @@ export default function Historico() {
 }
 
 /**
- * Seta do seletor de ano.
+ * Cabeçalho de navegação de período, usado pelo Mês e pelo Ano.
+ *
+ * Um componente para os dois porque a única diferença é o rótulo — duas cópias
+ * divergiriam na primeira mexida, como o cálculo de dia da semana que existia em três
+ * lugares neste projeto.
+ */
+function SeletorPeriodo({
+  rotulo,
+  temAnterior,
+  temProximo,
+  onAnterior,
+  onProximo,
+}: {
+  rotulo: string;
+  temAnterior: boolean;
+  temProximo: boolean;
+  onAnterior: () => void;
+  onProximo: () => void;
+}) {
+  return (
+    <View className="flex-row items-center justify-between pb-3">
+      <Seta direcao="anterior" disponivel={temAnterior} onPress={onAnterior} />
+      {/* `flex-1` com centro: o rótulo do mês varia muito de largura ("maio de 2026"
+          contra "setembro de 2026"), e sem isso as setas dançariam de lugar ao navegar. */}
+      <Text
+        maxFontSizeMultiplier={1.2}
+        numberOfLines={1}
+        className="flex-1 text-center font-displayBold text-xl text-texto">
+        {rotulo}
+      </Text>
+      <Seta direcao="proximo" disponivel={temProximo} onPress={onProximo} />
+    </View>
+  );
+}
+
+/**
+ * Seta do seletor.
  *
  * Indisponível fica **visível e apagada**, não escondida: sumir a seta muda a largura do
- * cabeçalho e o ano dança de lugar ao navegar. Apagada, o layout não se move e a pessoa
- * vê que chegou na ponta.
+ * cabeçalho e o rótulo dança de lugar ao navegar. Apagada, o layout não se move e a
+ * pessoa vê que chegou na ponta.
  *
  * `disabled` no `Pressable` e não só a cor: sem ele o toque continua acontecendo, o
  * haptic dispara e o app parece ter engasgado.
  */
-function SetaAno({
+function Seta({
   direcao,
   disponivel,
   onPress,
@@ -288,18 +336,14 @@ function SetaAno({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !disponivel }}
-      accessibilityLabel={direcao === 'anterior' ? 'Ano anterior' : 'Próximo ano'}
+      accessibilityLabel={direcao === 'anterior' ? 'Período anterior' : 'Próximo período'}
       disabled={!disponivel}
       onPress={() => {
         tapFeedback();
         onPress();
       }}
       className="min-h-[44px] min-w-[44px] items-center justify-center">
-      <Icone
-        size={26}
-        color={disponivel ? tokens.agua : tokens.linha}
-        strokeWidth={2.8}
-      />
+      <Icone size={26} color={disponivel ? tokens.agua : tokens.linha} strokeWidth={2.8} />
     </Pressable>
   );
 }

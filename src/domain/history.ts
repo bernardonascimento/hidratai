@@ -106,25 +106,60 @@ export type MonthGrid = {
   slots: DaySlot[];
 };
 
-/** Todos os dias do **mês corrente**, alinhados em colunas de segunda a domingo. */
+/**
+ * Todos os dias de **um** mês, alinhados em colunas de segunda a domingo.
+ *
+ * `mes` ('YYYY-MM') é parâmetro, e antes não era — vinha fixo de `hoje`, então o mês
+ * anterior ficava inalcançável pelo mesmo motivo que o ano anterior ficava: o dado no
+ * disco e nenhuma tela capaz de mostrá-lo.
+ */
 export function monthGrid(
   days: Record<string, DayLog>,
   metaAtual: number,
   hoje: string = dayKey(),
   restDay: number | null = null,
+  mes?: string,
 ): MonthGrid {
-  const [ano, mes] = hoje.split('-').map(Number);
-  const mes0 = mes - 1;
+  const [ano, mesNum] = (mes ?? hoje.slice(0, 7)).split('-').map(Number);
+  const mes0 = mesNum - 1;
   // Dia 0 do mês seguinte é o último deste — evita tabela de 28/29/30/31.
   const ultimo = new Date(ano, mes0 + 1, 0).getDate();
 
   return {
-    month: `${ano}-${String(mes).padStart(2, '0')}`,
+    month: `${ano}-${String(mesNum).padStart(2, '0')}`,
     offset: indiceSemanaSeg(chaveDe(ano, mes0, 1)),
     slots: Array.from({ length: ultimo }, (_, i) =>
       slotDe(chaveDe(ano, mes0, i + 1), days, metaAtual, hoje, restDay),
     ),
   };
+}
+
+/** Anda `delta` meses numa chave 'YYYY-MM'. Aceita virar o ano nas duas direções. */
+export function shiftMonth(mes: string, delta: number): string {
+  const [ano, m] = mes.split('-').map(Number);
+  // `new Date` normaliza mês 0 e 13 sozinho, virando o ano — fazer a conta à mão é onde
+  // se erra dezembro→janeiro.
+  const d = new Date(ano, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Primeiro mês navegável: o mais antigo com registro, ou o corrente se não houver nada.
+ *
+ * Ao contrário dos anos, aqui **não** se filtram os meses vazios: mês sem registro no
+ * meio do caminho faz parte da linha do tempo, e pular de março para junho esconderia
+ * que abril e maio existiram e foram em branco.
+ */
+export function firstMonthWithData(days: Record<string, DayLog>, hoje: string = dayKey()): string {
+  const chaves = Object.keys(days);
+  if (chaves.length === 0) return hoje.slice(0, 7);
+  return chaves.reduce((min, k) => (k < min ? k : min), chaves[0]).slice(0, 7);
+}
+
+/** '2026-08' -> 'agosto de 2026'. */
+export function monthLabel(mes: string): string {
+  const [ano, m] = mes.split('-').map(Number);
+  return `${MESES_CHEIOS[m - 1]} de ${ano}`;
 }
 
 export type HistoryStats = {
@@ -164,6 +199,20 @@ export type MonthSlot = {
 };
 
 const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const MESES_CHEIOS = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
 
 /**
  * Média diária de cada mês de **um** ano, de janeiro a dezembro.
