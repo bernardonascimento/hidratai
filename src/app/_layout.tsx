@@ -25,9 +25,10 @@ import { AppState, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppBackground } from '@/components/AppBackground';
-import { UndoToast } from '@/components/UndoToast';
+import { Toast } from '@/components/Toast';
 import { MAX_WIDTH } from '@/design/tokens';
 import { WATER_DRINK_ID } from '@/domain/drinks';
+import { semearConquistasVistas } from '@/lib/celebrate';
 import { msUntilNextLogicalDay } from '@/lib/date';
 import {
   ACAO_BEBI,
@@ -39,7 +40,7 @@ import {
 import { useGamification } from '@/store/useGamification';
 import { useLogicalDay } from '@/store/useLogicalDay';
 import { useProfile } from '@/store/useProfile';
-import { useUndoToast } from '@/store/useUndoToast';
+import { useToast } from '@/store/useToast';
 import { useWater } from '@/store/useWater';
 
 SplashScreen.preventAutoHideAsync();
@@ -107,8 +108,8 @@ export default function RootLayout() {
   const respostaNotificacao = Notifications.useLastNotificationResponse();
   const respostaTratada = useRef<string | null>(null);
 
-  const avisoDesfazer = useUndoToast((s) => s.aviso);
-  const limparDesfazer = useUndoToast((s) => s.limpar);
+  const avisoDaVez = useToast((s) => s.fila[0] ?? null);
+  const avancarAviso = useToast((s) => s.avancar);
 
   // Ponte única entre as stores, feita aqui porque exige as duas já hidratadas:
   // importa o XP/ofensiva que viviam em `useWater`, sorteia as missões do dia e
@@ -121,6 +122,18 @@ export default function RootLayout() {
     jogo.seedFrom({ xp: agua.xp, streak: agua.streak, lastMetDate: agua.lastMetDate });
     jogo.ensureMissions();
     jogo.syncStreak(agua.days);
+
+    /**
+     * Marca as conquistas já desbloqueadas **sem anunciar**, uma vez só.
+     *
+     * Sem isto, quem já usava o app antes desta feature abriria e receberia dez
+     * comemorações em fila por coisas conquistadas semanas atrás. Também cobre quem
+     * preencheu dias no Histórico, que muda o histórico sem passar pela tela Hoje.
+     *
+     * Depois do `syncStreak`: ele pode mudar a ofensiva, e duas conquistas dependem
+     * dela.
+     */
+    semearConquistasVistas();
   }, [pronto]);
 
   // Gate do onboarding (§5.1): quem ainda não configurou vai para as boas-vindas.
@@ -244,15 +257,15 @@ export default function RootLayout() {
               {/* Depois do `Stack` de propósito: é o que faz o toast passar **por
                   cima da tabBar**, deixando a ação primária livre. Dentro da tela ele
                   nunca alcançaria a barra, que é desenhada pelo navegador. */}
-              <UndoToast
-                aviso={avisoDesfazer}
+              <Toast
+                aviso={avisoDaVez}
                 onUndo={(id) => {
                   useWater.getState().removeEntry(id);
-                  limparDesfazer();
+                  avancarAviso();
                   // Desfazer pode devolver o dia para baixo da meta: os avisos voltam.
                   syncReminders();
                 }}
-                onExpire={limparDesfazer}
+                onExpire={avancarAviso}
               />
             </>
           )}

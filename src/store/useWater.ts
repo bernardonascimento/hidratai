@@ -18,6 +18,9 @@ export type AddResult = {
   streak: number;
   gainedFreeze: boolean;
   entryId: string;
+  /** XP antes e depois, para a tela derivar se subiu de nível e comemorar. */
+  xpAntes: number;
+  xpDepois: number;
 };
 
 type WaterState = {
@@ -96,6 +99,8 @@ export const useWater = create<WaterState>()(
           streak: jogo.streak,
           gainedFreeze: jogo.gainedFreeze,
           entryId: entry.id,
+          xpAntes: jogo.xpAntes,
+          xpDepois: jogo.xpDepois,
         };
       },
 

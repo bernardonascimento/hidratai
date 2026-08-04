@@ -49,6 +49,18 @@ type GamificationState = {
   /** true depois de importar os valores que viviam em `useWater`. */
   seeded: boolean;
 
+  /**
+   * Ids de conquistas **já comemoradas** no toast.
+   *
+   * `null` quer dizer "nunca foi calculado", e é o estado de quem já usava o app antes
+   * desta feature. A diferença importa: com `null` a primeira checagem grava tudo em
+   * silêncio, senão despejaria dez avisos de uma vez por conquistas de semanas atrás.
+   *
+   * **Não** é a lista de desbloqueadas — isso continua derivado do histórico (§7.3).
+   * Aqui só mora a memória do aviso.
+   */
+  achievementsSeen: string[] | null;
+
   seedFrom: (dados: { xp: number; streak: number; lastMetDate: string | null }) => void;
   ensureMissions: (date?: string) => void;
   syncStreak: (days: Record<string, DayLog>) => void;
@@ -57,15 +69,31 @@ type GamificationState = {
     volumeMl: number;
     metGoalNow: boolean;
     days: Record<string, DayLog>;
-  }) => { xpGained: number; streak: number; gainedFreeze: boolean };
+  }) => {
+    xpGained: number;
+    streak: number;
+    gainedFreeze: boolean;
+    /** XP antes do registro, para quem chama derivar se subiu de nível. */
+    xpAntes: number;
+    xpDepois: number;
+  };
   onEntryRemoved: (input: { date: string; volumeMl: number; lostGoal: boolean }) => void;
   unlockElement: (id: string) => boolean;
+  /**
+   * Marca conquistas como comemoradas e devolve **quais eram novidade**.
+   *
+   * Fica na store, e não na tela, porque a marcação e a leitura têm de ser atômicas: em
+   * duas telas chamando isso, ler-e-depois-gravar deixaria a mesma conquista anunciada
+   * duas vezes.
+   */
+  registrarConquistasVistas: (idsDesbloqueados: string[]) => string[];
   markResultShown: (date: string) => void;
   setRestDay: (dia: number | null) => void;
   reset: () => void;
 };
 
 const ESTADO_INICIAL = {
+  achievementsSeen: null as string[] | null,
   xp: 0,
   xpToday: 0,
   xpTodayDate: null,
@@ -192,7 +220,13 @@ export const useGamification = create<GamificationState>()(
           ...streakState,
         });
 
-        return { xpGained, streak: streakState.streak, gainedFreeze };
+        return {
+          xpGained,
+          streak: streakState.streak,
+          gainedFreeze,
+          xpAntes: estado.xp,
+          xpDepois: estado.xp + xpGained,
+        };
       },
 
       onEntryRemoved: ({ date, volumeMl, lostGoal }) => {
@@ -233,6 +267,20 @@ export const useGamification = create<GamificationState>()(
         return true;
       },
 
+      registrarConquistasVistas: (idsDesbloqueados) => {
+        const vistas = get().achievementsSeen;
+        set({ achievementsSeen: idsDesbloqueados });
+        // Primeira vez: grava e não anuncia nada.
+        //
+        // `== null` e não `=== null` de propósito: o estado persistido de quem instalou
+        // antes desta feature não tem a chave, e dependendo de como o merge do `persist`
+        // resolve isso o valor chega `undefined`. Com a comparação estrita, `undefined`
+        // cairia no caminho de baixo e `new Set(undefined)` estouraria.
+        if (vistas == null) return [];
+        const jaVistas = new Set(vistas);
+        return idsDesbloqueados.filter((id) => !jaVistas.has(id));
+      },
+
       markResultShown: (date) => set({ resultShownFor: date }),
 
       setRestDay: (dia) => set({ restDay: dia }),
@@ -262,6 +310,7 @@ export const useGamification = create<GamificationState>()(
         yesterdayMissionIds: state.yesterdayMissionIds,
         resultShownFor: state.resultShownFor,
         seeded: state.seeded,
+        achievementsSeen: state.achievementsSeen,
       }),
     },
   ),

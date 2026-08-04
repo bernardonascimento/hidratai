@@ -8,6 +8,7 @@ import { GardenScene } from '@/components/GardenScene';
 import { Pressable3D } from '@/components/Pressable3D';
 import { tokens } from '@/design/tokens';
 import { GARDEN_ELEMENTS, nextTarget } from '@/domain/garden';
+import { celebrarCantinho } from '@/lib/celebrate';
 import { mascotMood } from '@/domain/mascot';
 import { milestonesOf, shareText } from '@/domain/milestones';
 import { successFeedback, tapFeedback } from '@/lib/haptics';
@@ -104,7 +105,10 @@ export default function Cantinho() {
                             : `${elemento.name}, custa ${elemento.cost} gotas`
                         }
                         onPress={() => {
-                          if (unlockElement(elemento.id)) successFeedback();
+                          if (unlockElement(elemento.id)) {
+                            successFeedback();
+                            celebrarCantinho(elemento);
+                          }
                         }}
                         className="flex-1"
                         faceClassName={`items-center gap-1 rounded-2xl border-2 px-2 py-3 ${

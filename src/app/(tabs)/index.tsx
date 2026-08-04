@@ -23,11 +23,12 @@ import { tipForDate } from '@/domain/tips';
 import { previousDay } from '@/lib/date';
 import { formatVolume } from '@/lib/format';
 import { registerFeedback, successFeedback } from '@/lib/haptics';
+import { celebrarRegistro } from '@/lib/celebrate';
 import { syncReminders } from '@/lib/notifications';
 import { useGamification } from '@/store/useGamification';
 import { useProfile } from '@/store/useProfile';
 import { useLogicalDay } from '@/store/useLogicalDay';
-import { useUndoToast } from '@/store/useUndoToast';
+import { useToast } from '@/store/useToast';
 import {
   useTodayEntries,
   useTodayHydrationMl,
@@ -126,8 +127,8 @@ export default function Hoje() {
   const [missoesAbertas, setMissoesAbertas] = useState(false);
 
   // O toast vive no layout raiz para poder cobrir a tabBar; aqui só se avisa.
-  const mostrarDesfazer = useUndoToast((s) => s.mostrar);
-  const limparDesfazer = useUndoToast((s) => s.limpar);
+  const pedirDesfazer = useToast((s) => s.pedirDesfazer);
+  const limparAvisos = useToast((s) => s.limpar);
 
   const progresso = goalMl > 0 ? total / goalMl : 0;
   const bateuMeta = total >= goalMl;
@@ -157,11 +158,23 @@ export default function Hoje() {
       setCelebracao({ xp: resultado.xpGained, streak: resultado.streak });
       // A celebração toma a tela: dois avisos ao mesmo tempo competem, e desfazer
       // o registro que **acabou de bater a meta** não é o que ninguém quer ali.
-      limparDesfazer();
+      limparAvisos();
     } else {
       registerFeedback();
-      mostrarDesfazer({ entryId: resultado.entryId, volumeMl: selecionado });
+      pedirDesfazer({ entryId: resultado.entryId, volumeMl: selecionado });
     }
+
+    /**
+     * Depois do desfazer, de propósito.
+     *
+     * `celebrarRegistro` descarta o desfazer pendente quando encontra vitória, então a
+     * ordem é o que garante a prioridade: pede-se o desfazer primeiro e a vitória o
+     * atropela se existir. Invertendo, o desfazer sobrescreveria a comemoração.
+     *
+     * Fora do `if`: bater a meta também sobe de nível e fecha conquista, e essas ficam
+     * na fila para depois que a celebração de tela cheia sair.
+     */
+    celebrarRegistro({ antes: resultado.xpAntes, depois: resultado.xpDepois });
   }
 
   return (
@@ -201,7 +214,7 @@ export default function Hoje() {
               onPress={() => {
                 // Sai da frente: com o painel aberto o toast fica atrás do escuro,
                 // e reaparecer depois que ele fecha não faz sentido nenhum.
-                limparDesfazer();
+                limparAvisos();
                 setMissoesAbertas(true);
               }}
             />
