@@ -39,7 +39,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { LIP, LIP_PRESSED, tokens } from '@/design/tokens';
+import { LIP, LIP_PRESSED, RADIUS, tokens } from '@/design/tokens';
 import { formatVolume } from '@/lib/format';
 import { tapFeedback } from '@/lib/haptics';
 import { useReducedMotionPref } from '@/lib/motion';
@@ -185,10 +185,22 @@ export function Toast({ aviso, onUndo, onExpire }: Props) {
           flexDirection: 'row',
           alignItems: 'center',
           gap: 10,
-          borderRadius: 999,
+          /**
+           * `RADIUS.card`, o mesmo do `Button` e do `Card` — não mais a pill de 999.
+           *
+           * A pill custava duas coisas. **Cobertura:** as pontas arredondadas deixavam as
+           * pílulas do HUD aparecerem atrás nos cantos, e um aviso translúcido pelas
+           * bordas lê como falha de render. **Largura:** com duas linhas de texto, as
+           * extremidades viravam duas lentes vazias que nenhum conteúdo alcançava.
+           *
+           * O raio de 16 resolve as duas e ainda alinha o toast com a linguagem do resto
+           * do app: tudo que é bloco aqui usa `rounded-2xl`, e pill é reservada a
+           * pastilha e a botão pequeno.
+           */
+          borderRadius: RADIUS.card,
           paddingLeft: 14,
           paddingRight: conteudo.kind === 'desfazer' ? 6 : 16,
-          paddingVertical: conteudo.kind === 'desfazer' ? 6 : 10,
+          paddingVertical: conteudo.kind === 'desfazer' ? 8 : 12,
           /**
            * Duas caras.
            *
@@ -276,16 +288,42 @@ function Desfazer({
 }) {
   return (
     <>
-      <Check size={24} color={tokens.agua} strokeWidth={3} />
+      {/*
+       * Ícone e texto num bloco próprio com `marginBottom: LIP`.
+       *
+       * Sem isso eles ficavam 2pt abaixo do centro **visual** do botão. O
+       * `alignItems: 'center'` do container centraliza pela caixa do botão, e essa caixa
+       * tem 48pt — 44 de face mais 4 de lip. O centro da caixa fica 2pt abaixo do centro
+       * da face colorida, que é o que o olho lê como o botão. Descontar o lip alinha pelo
+       * que se vê, não pelo que o layout mede.
+       */}
+      <View className="flex-1 flex-row items-center gap-2.5" style={{ marginBottom: LIP }}>
+        <Check size={24} color={tokens.agua} strokeWidth={3} />
 
-      {/* Texto escuro, não azul: o azul do app sobre `aguaTint` dá 2,15:1, enquanto
-          o escuro dá 7,67:1. O azul fica no ícone e na borda, onde é decoração. */}
-      <Text
-        maxFontSizeMultiplier={1.3}
-        className="flex-1 font-displayBold text-xl"
-        style={{ color: tokens.texto }}>
-        {`+ ${formatVolume(aviso.volumeMl)}`}
-      </Text>
+        {/*
+         * Azul `agua`, o mesmo dos botões de opção.
+         *
+         * Registro honesto do custo: sobre o `aguaTint` do fundo isso dá **2,15:1**,
+         * contra 7,67:1 do escuro que estava aqui — abaixo dos 3:1 que texto grande em
+         * negrito pede.
+         *
+         * Fica assim por **coerência**, que é um argumento real: o app já usa
+         * `text-agua` sobre `bg-agua-tint` no `VolumeCard` selecionado, nos
+         * `SegmentedPills` e nas pills de intervalo dos Ajustes. Se o combo vale nesses
+         * quatro lugares, não faz sentido o toast ser a exceção — e a informação aqui é
+         * redundante: o volume acabou de ser tocado pela pessoa.
+         *
+         * Se um dia isso for corrigido, corrija **junto** nos cinco lugares, e o caminho
+         * é escurecer o fundo ou usar um azul mais fundo que o `aguaLip` (que só chega a
+         * 2,81:1).
+         */}
+        <Text
+          maxFontSizeMultiplier={1.3}
+          className="flex-1 font-displayBold text-xl"
+          style={{ color: tokens.agua }}>
+          {`+ ${formatVolume(aviso.volumeMl)}`}
+        </Text>
+      </View>
 
       {/* Azul cheio sobre o fundo claro: o botão é a ação, então é ele que carrega o
           peso da faixa — e é o mesmo azul da ação primária do app, com o mesmo lip.
