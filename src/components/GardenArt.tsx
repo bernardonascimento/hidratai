@@ -177,13 +177,221 @@ function desenho(id: GardenElementId) {
     case 'peixinho':
       return (
         <G>
-          {/* pote de vidro com água */}
-          <Path d="M22 40 H78 V74 C 78 86 68 94 56 94 H44 C32 94 22 86 22 74 Z" fill={tokens.aguaTint} />
+          {/* Pote de vidro. O corpo era `aguaTint` (#DDF4FF), **a mesma cor do fundo do
+              cenário** (`bg-agua-tint`) — o pote sumia e sobrava um peixe flutuando no
+              céu. Branco translúcido com aro cinza lê como vidro sobre o azul claro. */}
+          <Path
+            d="M22 40 H78 V74 C 78 86 68 94 56 94 H44 C32 94 22 86 22 74 Z"
+            fill={tokens.canvas}
+            opacity={0.75}
+            stroke={tokens.linha}
+            strokeWidth="2.5"
+          />
           <Rect x="18" y="34" width="64" height="8" rx="4" fill={tokens.linha} />
           {/* peixe */}
           <Ellipse cx="48" cy="66" rx="14" ry="10" fill={tokens.ofensiva} />
           <Path d="M62 66 L74 58 V74 Z" fill={tokens.ofensiva} />
           <Circle cx="43" cy="63" r="2.5" fill={tokens.texto} />
+        </G>
+      );
+
+    // ---------- Adereços de chão ----------
+
+    case 'grama':
+      return (
+        <G>
+          {[24, 38, 50, 62, 76].map((x, i) => (
+            <Path
+              key={x}
+              d={`M${x} 88 C ${x - 4} 74 ${x - 2} 66 ${x + (i % 2 === 0 ? 3 : -3)} 58`}
+              stroke={VERDE}
+              strokeWidth="6"
+              strokeLinecap="round"
+              fill="none"
+            />
+          ))}
+        </G>
+      );
+
+    case 'cogumelo':
+      return (
+        <G>
+          <Rect x="43" y="62" width="14" height="26" rx="6" fill="#F2E3CE" />
+          <Path d="M18 62 C 20 40 40 30 50 30 C 60 30 80 40 82 62 Z" fill="#E5645C" />
+          <Circle cx="38" cy="50" r="5" fill={tokens.canvas} />
+          <Circle cx="60" cy="46" r="4" fill={tokens.canvas} />
+          <Circle cx="66" cy="56" r="3" fill={tokens.canvas} />
+        </G>
+      );
+
+    case 'tulipa':
+      return (
+        <G>
+          <Path d="M50 88 V50" stroke={VERDE_ESCURO} strokeWidth="5" strokeLinecap="round" />
+          <Ellipse cx="34" cy="66" rx="12" ry="6" fill={VERDE} transform="rotate(-20 34 66)" />
+          {/* A tulipa é três pétalas fechadas, não uma margarida: o desenho tem de se
+              distinguir da 'flor' quando as duas estiverem no cenário. */}
+          <Path d="M36 50 C 36 30 50 22 50 22 C 50 22 64 30 64 50 C 64 58 58 62 50 62 C 42 62 36 58 36 50 Z" fill="#E86A9A" />
+          <Path d="M50 22 C 50 22 44 34 44 52" stroke="#D4507F" strokeWidth="3" fill="none" />
+        </G>
+      );
+
+    case 'girassol':
+      return (
+        <G>
+          <Path d="M50 92 V44" stroke={VERDE_ESCURO} strokeWidth="6" strokeLinecap="round" />
+          <Ellipse cx="30" cy="68" rx="14" ry="7" fill={VERDE} transform="rotate(-25 30 68)" />
+          <Ellipse cx="70" cy="76" rx="13" ry="7" fill={VERDE} transform="rotate(25 70 76)" />
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((ang) => (
+            <Ellipse
+              key={ang}
+              cx="50"
+              cy="16"
+              rx="8"
+              ry="13"
+              fill={tokens.xp}
+              transform={`rotate(${ang} 50 34)`}
+            />
+          ))}
+          <Circle cx="50" cy="34" r="12" fill={TERRA_ESCURA} />
+        </G>
+      );
+
+    case 'banquinho':
+      return (
+        <G>
+          <Rect x="18" y="48" width="64" height="12" rx="5" fill={TERRA} />
+          <Rect x="26" y="58" width="9" height="32" rx="4" fill={TERRA_ESCURA} />
+          <Rect x="65" y="58" width="9" height="32" rx="4" fill={TERRA_ESCURA} />
+        </G>
+      );
+
+    case 'lanterna':
+      return (
+        <G>
+          <Rect x="46" y="14" width="8" height="18" rx="4" fill={PEDRA_ESCURA} />
+          <Path d="M32 34 H68 L62 74 H38 Z" fill={tokens.xp} opacity={0.9} />
+          <Rect x="28" y="30" width="44" height="8" rx="4" fill={PEDRA_ESCURA} />
+          <Rect x="34" y="72" width="32" height="8" rx="4" fill={PEDRA_ESCURA} />
+        </G>
+      );
+
+    // ---------- Faixa do meio ----------
+
+    case 'arbusto':
+      return (
+        <G>
+          <Circle cx="34" cy="66" r="20" fill={VERDE} />
+          <Circle cx="62" cy="62" r="24" fill={VERDE_ESCURO} />
+          <Circle cx="50" cy="76" r="18" fill={VERDE} />
+        </G>
+      );
+
+    case 'arvorezinha':
+      return (
+        <G>
+          <Rect x="44" y="58" width="12" height="34" rx="5" fill={TERRA_ESCURA} />
+          <Circle cx="50" cy="34" r="26" fill={VERDE_ESCURO} />
+          <Circle cx="33" cy="46" r="16" fill={VERDE} />
+          <Circle cx="67" cy="46" r="16" fill={VERDE} />
+        </G>
+      );
+
+    case 'trepadeira':
+      return (
+        <G>
+          <Path
+            d="M50 92 C 34 74 66 60 50 42 C 38 28 58 18 50 8"
+            stroke={VERDE_ESCURO}
+            strokeWidth="5"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {[
+            [34, 78],
+            [64, 60],
+            [36, 40],
+            [62, 22],
+          ].map(([cx, cy]) => (
+            <Ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx="10" ry="7" fill={VERDE} />
+          ))}
+        </G>
+      );
+
+    case 'varal':
+      /**
+       * A primeira versão era uma corda em arco raso com quatro retângulos pequenos, e
+       * no cenário lia como um sorriso com um paninho — a corda curvava demais e os
+       * panos eram estreitos e claros sobre fundo claro.
+       *
+       * Corrigido com: dois postes que ancoram a cena, corda quase reta, panos maiores
+       * e com contorno. O que faz ler como varal são os postes, não a corda.
+       */
+      return (
+        <G>
+          <Rect x="12" y="28" width="6" height="58" rx="3" fill={TERRA_ESCURA} />
+          <Rect x="82" y="28" width="6" height="58" rx="3" fill={TERRA_ESCURA} />
+          <Path
+            d="M15 32 C 40 40 60 40 85 32"
+            stroke={TERRA_ESCURA}
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {[
+            [30, 37, tokens.canvas],
+            [50, 39, tokens.aguaTint],
+            [70, 37, tokens.metaTint],
+          ].map(([x, y, cor]) => (
+            <Rect
+              key={String(x)}
+              x={Number(x) - 9}
+              y={Number(y)}
+              width="18"
+              height="26"
+              rx="3"
+              fill={String(cor)}
+              stroke={tokens.linha}
+              strokeWidth="2"
+            />
+          ))}
+        </G>
+      );
+
+    // ---------- Céu ----------
+
+    case 'passarinho':
+      return (
+        <G>
+          <Ellipse cx="48" cy="56" rx="22" ry="16" fill={tokens.agua} />
+          <Circle cx="66" cy="46" r="12" fill={tokens.agua} />
+          <Path d="M76 44 L88 48 L76 52 Z" fill={tokens.ofensiva} />
+          <Circle cx="69" cy="43" r="2.5" fill={tokens.texto} />
+          <Path d="M30 50 C 22 38 42 34 46 48 Z" fill={tokens.aguaLip} />
+        </G>
+      );
+
+    case 'arcoiris':
+      return (
+        <G>
+          {/* Arcos concêntricos desenhados do maior para o menor: sem gradiente, que é
+              regra do sistema de desenho. */}
+          {[
+            [42, '#E5645C'],
+            [34, tokens.ofensiva],
+            [26, tokens.xp],
+            [18, VERDE],
+            [10, tokens.agua],
+          ].map(([r, cor]) => (
+            <Path
+              key={String(r)}
+              d={`M${50 - Number(r)} 78 A ${r} ${r} 0 0 1 ${50 + Number(r)} 78`}
+              stroke={String(cor)}
+              strokeWidth="7"
+              fill="none"
+              strokeLinecap="round"
+            />
+          ))}
         </G>
       );
 

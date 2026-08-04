@@ -18,9 +18,40 @@ describe('catálogo do Cantinho', () => {
 
   it('os custos crescem e começam acessíveis', () => {
     const custos = GARDEN_ELEMENTS.map((e) => e.cost);
+    // O primeiro item tem de cair no primeiro ou segundo dia, ou ninguém entende a
+    // mecânica antes de desistir dela.
     expect(Math.min(...custos)).toBeLessThanOrEqual(2);
-    // Nada absurdo: o mais caro cabe em alguns meses de consistência.
-    expect(Math.max(...custos)).toBeLessThanOrEqual(60);
+    /**
+     * Teto de 80, não os 60 de antes.
+     *
+     * Os 60 estavam calibrados para o catálogo de 12 elementos. Com 24 e horizonte de
+     * dois anos, a peça final precisa custar caro — é ela que dá o que perseguir no
+     * segundo ano. 80 gotas são ~16 semanas a cinco dias por semana: longo, e alcançável.
+     */
+    expect(Math.max(...custos)).toBeLessThanOrEqual(80);
+  });
+
+  it('nenhum par de elementos ocupa exatamente a mesma posição', () => {
+    // Com 24 peças a chance de colisão por descuido é real, e duas no mesmo ponto
+    // deixam uma invisível para sempre atrás da outra.
+    const pontos = GARDEN_ELEMENTS.map((e) => `${e.x},${e.y}`);
+    expect(new Set(pontos).size).toBe(pontos.length);
+  });
+
+  it('deixa livre o vão onde a Gotinha mora', () => {
+    /**
+     * A Gotinha é desenhada **por cima** de tudo, com 92pt, centrada e a 24pt do fundo.
+     * Num cenário de ~303×250 isso a coloca em x de 0.35 a 0.65 e y de 0.54 a 0.90.
+     * Peça posicionada ali fica atrás dela — o usuário paga gotas por algo que não vê.
+     *
+     * A primeira versão deste teste usava uma área menor (x 0.38–0.62, y > 0.75) e
+     * deixava passar duas peças que caíam no colo dela.
+     */
+    const naFrenteDela = GARDEN_ELEMENTS.filter(
+      (e) => e.x > 0.35 && e.x < 0.65 && e.y > 0.54 && e.y < 0.9,
+    ).map((e) => `${e.id} (${e.x}, ${e.y})`);
+
+    expect(naFrenteDela).toEqual([]);
   });
 
   it('todas as posições ficam dentro do cenário', () => {
@@ -30,6 +61,30 @@ describe('catálogo do Cantinho', () => {
       expect(e.y).toBeGreaterThanOrEqual(0);
       expect(e.y).toBeLessThanOrEqual(1);
     }
+  });
+
+  it('nenhuma peça é cortada pela borda lateral', () => {
+    /**
+     * O centro dentro da caixa não basta: a peça é desenhada **centrada** em `x`, com
+     * 84pt × `scale` de largura num cenário de ~303pt. Metade da peça é 0.139×`scale` da
+     * largura, e `x` menor que isso corta o desenho ao meio.
+     *
+     * Quatro peças nasceram cortadas — `trepadeira` em 0.04, `samambaia` em 0.06,
+     * `regador` em 0.96 e `cacto` em 0.92 — e o teste anterior aprovava, porque só olhava
+     * se o centro caía entre 0 e 1.
+     *
+     * A tolerância de 0.03 existe porque os desenhos não preenchem o quadro de 100×100:
+     * quase todos têm margem interna, então um vazamento pequeno não aparece.
+     */
+    const MEIA_PECA = 0.139;
+    const TOLERANCIA = 0.03;
+
+    const cortadas = GARDEN_ELEMENTS.filter((e) => {
+      const meia = MEIA_PECA * e.scale;
+      return e.x - meia < -TOLERANCIA || e.x + meia > 1 + TOLERANCIA;
+    }).map((e) => `${e.id} (x ${e.x}, scale ${e.scale})`);
+
+    expect(cortadas).toEqual([]);
   });
 
   it('elementById acha e não inventa', () => {
@@ -48,8 +103,19 @@ describe('catálogo do Cantinho', () => {
   });
 
   it('nextTarget é o mais barato que falta', () => {
-    expect(nextTarget([])?.id).toBe('muda');
-    expect(nextTarget(['muda'])?.id).toBe('pedrinhas');
+    /**
+     * Verifica a **propriedade**, não um id fixo. A versão anterior cravava
+     * `nextTarget(['muda']) === 'pedrinhas'`, e quebrou ao acrescentar um elemento mais
+     * barato — falhando por o catálogo ter mudado, não por o código estar errado.
+     */
+    const porCusto = [...GARDEN_ELEMENTS].sort((a, b) => a.cost - b.cost);
+    expect(nextTarget([])?.id).toBe(porCusto[0].id);
+
+    const desbloqueados: string[] = [];
+    for (const esperado of porCusto) {
+      expect(nextTarget(desbloqueados)?.id).toBe(esperado.id);
+      desbloqueados.push(esperado.id);
+    }
   });
 
   it('nextTarget devolve undefined quando tudo foi desbloqueado', () => {
