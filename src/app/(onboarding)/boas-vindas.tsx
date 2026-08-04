@@ -28,9 +28,17 @@ export default function BoasVindas() {
           <Text className="text-center font-displayBold text-3xl text-texto">
             Oi! Eu sou a Gotinha
           </Text>
+          {/* "cinco passos" e não "três perguntas".
+              O texto antigo prometia três, e a tela seguinte abria com "1 de 5" — a
+              primeira coisa que o app dizia já não batia com a segunda. E das cinco
+              etapas quatro são pergunta (peso, rotina, estilo, lembretes); só a da meta
+              é resultado, então nem "quatro perguntas" resolveria sem contrariar o
+              contador.
+
+              O número aqui tem de ser o mesmo de `ONBOARDING_STEPS`, que é o que a
+              pessoa vê em todas as telas seguintes. */}
           <Text className="text-center font-body text-lg text-texto-soft">
-            Vou te ajudar a beber água todo dia. São três perguntas rápidas e já
-            começamos.
+            Vou te ajudar a beber água todo dia. São cinco passos rápidos e já começamos.
           </Text>
         </View>
 
