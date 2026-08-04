@@ -13,10 +13,12 @@ import { WeekBars } from '@/components/WeekBars';
 import { YearBars } from '@/components/YearBars';
 import { WATER_DRINK_ID } from '@/domain/drinks';
 import { monthGrid, shortDate, statsOf, weekSlots, yearMonths } from '@/domain/history';
+import { dayKey } from '@/lib/date';
 import { formatVolume } from '@/lib/format';
 import { tokens } from '@/design/tokens';
 import { registerFeedback } from '@/lib/haptics';
 import { syncReminders } from '@/lib/notifications';
+import { useGamification } from '@/store/useGamification';
 import {
   useTodayEntries,
   useTodayHydrationMl,
@@ -45,6 +47,7 @@ const VISTAS: { value: Vista; label: string }[] = [
 export default function Historico() {
   const days = useWater((s) => s.days);
   const goalMl = useWater((s) => s.goalMl);
+  const restDay = useGamification((s) => s.restDay);
   const removeEntry = useWater((s) => s.removeEntry);
   const addEntryYesterday = useWater((s) => s.addEntryYesterday);
   const entriesHoje = useTodayEntries();
@@ -82,8 +85,10 @@ export default function Historico() {
     );
   }
 
-  const semana = weekSlots(days, goalMl);
-  const grade = monthGrid(days, goalMl);
+  // `dayKey()` explícito nas duas: o padrão do domínio também é ele, mas passar o
+  // `restDay` na quarta posição exige preencher a terceira.
+  const semana = weekSlots(days, goalMl, dayKey(), restDay);
+  const grade = monthGrid(days, goalMl, dayKey(), restDay);
   const ano = yearMonths(days);
   // As estatísticas seguem o recorte escolhido; no ano, o mês corrente é o recorte
   // mais próximo que existe — a média anual seria outra conta.

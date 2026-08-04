@@ -60,14 +60,30 @@ export function MonthCalendar({ grade }: Props) {
             const ehHoje = slot.date === hoje;
             const dia = numeroDoDia(slot.date);
 
+            /**
+             * Dia livre **e** sem registro ganha o azul-véu mais claro em vez do cinza.
+             *
+             * É o mesmo raciocínio do dia futuro: o cinza `linha` é a marca de "não
+             * bebeu", e usá-lo num domingo que a pessoa combinou de folgar transforma a
+             * folga em dívida no calendário. O tom escolhido é `aguaVeuSuave` (#E4F5FE),
+             * distante o bastante do dia com água — o mais fraco deles é o azul a 45% de
+             * opacidade, que dá #99DBFB — para não parecer meio copo bebido.
+             *
+             * Dia livre **com** registro segue pintado normalmente: aí o volume é a
+             * informação que importa, e a folga já não está em questão.
+             */
+            const livreVazio = slot.restDay && slot.empty && !slot.future;
+
             // Dia futuro fica só como contorno: não é falha, é dia que não chegou.
             const fundo = slot.future
               ? 'transparent'
-              : slot.empty
-                ? tokens.linha
-                : slot.metGoal
-                  ? tokens.meta
-                  : tokens.agua;
+              : livreVazio
+                ? tokens.aguaVeuSuave
+                : slot.empty
+                  ? tokens.linha
+                  : slot.metGoal
+                    ? tokens.meta
+                    : tokens.agua;
 
             // Sem água, o número tem de ler sobre cinza; com água, sobre a cor cheia.
             const corDoNumero = slot.future
@@ -83,11 +99,13 @@ export function MonthCalendar({ grade }: Props) {
                 accessibilityLabel={
                   slot.future
                     ? `Dia ${dia}, ${weekdayFull(slot.date)}: ainda não chegou`
-                    : slot.empty
-                      ? `Dia ${dia}, ${weekdayFull(slot.date)}: sem registro`
-                      : `Dia ${dia}, ${weekdayFull(slot.date)}: ${formatVolume(slot.hydrationMl)}${
-                          slot.metGoal ? ', meta batida' : ''
-                        }`
+                    : livreVazio
+                      ? `Dia ${dia}, ${weekdayFull(slot.date)}: dia livre`
+                      : slot.empty
+                        ? `Dia ${dia}, ${weekdayFull(slot.date)}: sem registro`
+                        : `Dia ${dia}, ${weekdayFull(slot.date)}: ${formatVolume(slot.hydrationMl)}${
+                            slot.restDay ? ', dia livre' : ''
+                          }${slot.metGoal ? ', meta batida' : ''}`
                 }
                 className="flex-1 items-center justify-center rounded-lg"
                 style={{

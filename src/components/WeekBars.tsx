@@ -1,3 +1,4 @@
+import { Snowflake } from 'lucide-react-native';
 import { Text, View } from 'react-native';
 
 import { tokens } from '@/design/tokens';
@@ -40,11 +41,13 @@ export function WeekBars({ slots }: Props) {
             accessibilityLabel={
               slot.future
                 ? `${weekdayFull(slot.date)}: ainda não chegou`
-                : slot.empty
-                  ? `${weekdayFull(slot.date)}: sem registro`
-                  : `${weekdayFull(slot.date)}: ${formatVolume(slot.hydrationMl)} de ${formatVolume(slot.goalMl)}${
-                      slot.metGoal ? ', meta batida' : ''
-                    }`
+                : slot.restDay && slot.empty
+                  ? `${weekdayFull(slot.date)}: dia livre`
+                  : slot.empty
+                    ? `${weekdayFull(slot.date)}: sem registro`
+                    : `${weekdayFull(slot.date)}: ${formatVolume(slot.hydrationMl)} de ${formatVolume(slot.goalMl)}${
+                        slot.restDay ? ', dia livre' : ''
+                      }${slot.metGoal ? ', meta batida' : ''}`
             }>
             <View
               className="w-full justify-end overflow-hidden rounded-lg"
@@ -67,6 +70,23 @@ export function WeekBars({ slots }: Props) {
                     backgroundColor: cor,
                   }}
                 />
+              )}
+
+              {/* Dia livre e sem registro leva o floco — o **mesmo ícone** do card
+                  "Dia livre" nos Ajustes, para o usuário ligar as duas telas sem
+                  legenda.
+
+                  Aqui a marca pode ser um ícone porque a trilha vazia tem 132pt de
+                  altura. No calendário do mês a célula tem ~40pt e o número do dia é
+                  dela, então lá a marca é a cor de fundo. Tratamentos diferentes pelo
+                  espaço disponível, não por descuido. */}
+              {slot.restDay && slot.empty && !slot.future && (
+                <View className="absolute inset-0 items-center justify-center">
+                  {/* `textoSoft` e não `textoOff`: em #AFAFAF sobre a trilha #E5E5E5 o
+                      floco dava 1,75 de contraste e mal se via. Em #777777 sobe para
+                      3,6 — lido sem virar destaque, que é o papel dele aqui. */}
+                  <Snowflake size={20} color={tokens.textoSoft} strokeWidth={2.4} />
+                </View>
               )}
             </View>
 

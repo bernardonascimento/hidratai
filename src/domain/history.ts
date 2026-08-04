@@ -1,4 +1,4 @@
-import { dayKey } from '@/lib/date';
+import { dayKey, weekdayOf } from '@/lib/date';
 
 import type { DayLog } from './types';
 
@@ -16,20 +16,33 @@ export type DaySlot = {
    * um dia perdido, e pintá-los igual faria a semana começar sempre "falhada".
    */
   future: boolean;
+  /**
+   * Cai no dia livre da ofensiva. Mesma razão de existir que `future`: um domingo
+   * marcado como livre e sem registro **não é uma falha**, e pintá-lo com o cinza de
+   * "não bebeu" transforma uma folga combinada em dívida no calendário.
+   */
+  restDay: boolean;
 };
 
 /** Índice do dia na semana que **começa na segunda**: seg=0 … dom=6. */
 function indiceSemanaSeg(key: string): number {
-  return (diaDaSemana(key) + 6) % 7;
+  return (weekdayOf(key) + 6) % 7;
 }
 
 function chaveDe(ano: number, mes0: number, dia: number): string {
   return `${ano}-${String(mes0 + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
-function slotDe(date: string, days: Record<string, DayLog>, metaAtual: number, hoje: string): DaySlot {
+function slotDe(
+  date: string,
+  days: Record<string, DayLog>,
+  metaAtual: number,
+  hoje: string,
+  restDay: number | null,
+): DaySlot {
   const dia = days[date];
   const future = date > hoje;
+  const ehLivre = restDay !== null && weekdayOf(date) === restDay;
 
   if (!dia) {
     return {
@@ -40,6 +53,7 @@ function slotDe(date: string, days: Record<string, DayLog>, metaAtual: number, h
       metGoal: false,
       empty: true,
       future,
+      restDay: ehLivre,
     };
   }
   return {
@@ -50,6 +64,7 @@ function slotDe(date: string, days: Record<string, DayLog>, metaAtual: number, h
     metGoal: dia.metGoal,
     empty: dia.entries.length === 0,
     future,
+    restDay: ehLivre,
   };
 }
 
@@ -63,13 +78,20 @@ export function weekSlots(
   days: Record<string, DayLog>,
   metaAtual: number,
   hoje: string = dayKey(),
+  restDay: number | null = null,
 ): DaySlot[] {
   const [y, m, d] = hoje.split('-').map(Number);
   const segunda = new Date(y, m - 1, d - indiceSemanaSeg(hoje));
 
   return Array.from({ length: 7 }, (_, i) => {
     const data = new Date(segunda.getFullYear(), segunda.getMonth(), segunda.getDate() + i);
-    return slotDe(chaveDe(data.getFullYear(), data.getMonth(), data.getDate()), days, metaAtual, hoje);
+    return slotDe(
+      chaveDe(data.getFullYear(), data.getMonth(), data.getDate()),
+      days,
+      metaAtual,
+      hoje,
+      restDay,
+    );
   });
 }
 
@@ -89,6 +111,7 @@ export function monthGrid(
   days: Record<string, DayLog>,
   metaAtual: number,
   hoje: string = dayKey(),
+  restDay: number | null = null,
 ): MonthGrid {
   const [ano, mes] = hoje.split('-').map(Number);
   const mes0 = mes - 1;
@@ -99,7 +122,7 @@ export function monthGrid(
     month: `${ano}-${String(mes).padStart(2, '0')}`,
     offset: indiceSemanaSeg(chaveDe(ano, mes0, 1)),
     slots: Array.from({ length: ultimo }, (_, i) =>
-      slotDe(chaveDe(ano, mes0, i + 1), days, metaAtual, hoje),
+      slotDe(chaveDe(ano, mes0, i + 1), days, metaAtual, hoje, restDay),
     ),
   };
 }
@@ -186,19 +209,14 @@ const DIAS_CHEIOS = [
   'sábado',
 ];
 
-function diaDaSemana(key: string): number {
-  const [y, m, d] = key.split('-').map(Number);
-  return new Date(y, m - 1, d).getDay();
-}
-
 /** Rótulo curto do dia da semana ('seg'), para o eixo do gráfico. */
 export function weekdayShort(key: string): string {
-  return DIAS_CURTOS[diaDaSemana(key)];
+  return DIAS_CURTOS[weekdayOf(key)];
 }
 
 /** Nome cheio ('segunda'), para o leitor de tela — 'seg' soa como sigla. */
 export function weekdayFull(key: string): string {
-  return DIAS_CHEIOS[diaDaSemana(key)];
+  return DIAS_CHEIOS[weekdayOf(key)];
 }
 
 /** '2026-07-28' -> '28/07' */

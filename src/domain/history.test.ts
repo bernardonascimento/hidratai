@@ -169,3 +169,51 @@ describe('formatação de data', () => {
     expect(shortDate('2026-07-28')).toBe('28/07');
   });
 });
+
+describe('dia livre no calendário', () => {
+  // 2026-07-28 é uma terça. A semana do calendário vai de 2026-07-27 (segunda) a
+  // 2026-08-02 (domingo), então há exatamente um domingo na janela.
+  const HOJE = '2026-07-28';
+  const DOMINGO = 0;
+
+  it('weekSlots marca o dia livre e só ele', () => {
+    const slots = weekSlots(DAYS, 2000, HOJE, DOMINGO);
+    const marcados = slots.filter((s) => s.restDay);
+
+    expect(marcados).toHaveLength(1);
+    expect(weekdayFull(marcados[0].date)).toBe('domingo');
+  });
+
+  it('sem dia livre, nenhum slot vem marcado', () => {
+    for (const s of weekSlots(DAYS, 2000, HOJE, null)) expect(s.restDay).toBe(false);
+    for (const s of monthGrid(DAYS, 2000, HOJE, null).slots) expect(s.restDay).toBe(false);
+  });
+
+  it('monthGrid marca todos os domingos do mês', () => {
+    const slots = monthGrid(DAYS, 2000, HOJE, DOMINGO).slots;
+    const marcados = slots.filter((s) => s.restDay);
+
+    // Julho de 2026 tem 31 dias; entre 4 e 5 domingos, nunca outro dia.
+    expect(marcados.length).toBeGreaterThanOrEqual(4);
+    for (const s of marcados) expect(weekdayFull(s.date)).toBe('domingo');
+  });
+
+  it('dia livre com registro continua contando como dia com água', () => {
+    // A marca é sobre a folga, não sobre o volume: quem bebeu no dia livre tem de
+    // aparecer com água no calendário, senão o registro desaparece da vista.
+    const comAgua = { ...DAYS, '2026-08-02': dia('2026-08-02', 2100) };
+    const domingo = weekSlots(comAgua, 2000, HOJE, DOMINGO).find((s) => s.restDay);
+
+    expect(domingo?.restDay).toBe(true);
+    expect(domingo?.empty).toBe(false);
+    expect(domingo?.metGoal).toBe(true);
+  });
+
+  it('não altera as estatísticas', () => {
+    // Marcar é visual. Excluir o dia livre da média e das metas batidas seria outra
+    // decisão, e mudaria número que o usuário já vê hoje.
+    const com = statsOf(weekSlots(DAYS, 2000, HOJE, DOMINGO));
+    const sem = statsOf(weekSlots(DAYS, 2000, HOJE, null));
+    expect(com).toEqual(sem);
+  });
+});
