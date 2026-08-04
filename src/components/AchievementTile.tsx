@@ -1,16 +1,28 @@
 import {
   Award,
   CalendarCheck,
+  CalendarDays,
   Coffee,
-  CupSoda,
+  Crown,
   Droplet,
+  Droplets,
   Flame,
+  Flower2,
+  Gem,
+  GlassWater,
   type LucideIcon,
   Medal,
+  Moon,
+  Mountain,
+  RotateCcw,
+  Shield,
   Sparkles,
+  Sprout,
+  Star,
   Sunrise,
   Target,
   Trophy,
+  Waves,
   Zap,
 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -20,18 +32,36 @@ import { tokens } from '@/design/tokens';
 import type { Achievement } from '@/domain/achievements';
 import { tapFeedback } from '@/lib/haptics';
 
-/** O domínio guarda o nome do ícone; a UI resolve para o componente. */
+/**
+ * O domínio guarda o nome do ícone; a UI resolve para o componente.
+ *
+ * **Um ícone por conquista, sem repetir.** Com 24 blocos numa grade, dois iguais viram
+ * o mesmo bloco aos olhos de quem passa os olhos — já aconteceu com o `flame` em
+ * "3 dias" e "1 semana". Ao acrescentar conquista, confira que o ícone é novo.
+ */
 const ICONES: Record<string, LucideIcon> = {
   droplet: Droplet,
+  droplets: Droplets,
   flame: Flame,
   trophy: Trophy,
   award: Award,
+  crown: Crown,
   target: Target,
   medal: Medal,
+  gem: Gem,
   sunrise: Sunrise,
-  'cup-soda': CupSoda,
+  moon: Moon,
   sparkles: Sparkles,
+  star: Star,
+  mountain: Mountain,
+  'glass-water': GlassWater,
+  waves: Waves,
   'calendar-check': CalendarCheck,
+  'calendar-days': CalendarDays,
+  shield: Shield,
+  'rotate-ccw': RotateCcw,
+  sprout: Sprout,
+  flower: Flower2,
   coffee: Coffee,
   zap: Zap,
 };

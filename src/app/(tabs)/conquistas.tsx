@@ -7,8 +7,10 @@ import { Card } from '@/components/Card';
 import { Pill } from '@/components/Pill';
 import { tokens } from '@/design/tokens';
 import { achievementsOf } from '@/domain/achievements';
+import { GARDEN_ELEMENTS } from '@/domain/garden';
 import { levelFromXp, levelProgress, xpForLevel } from '@/domain/goal';
 import { nextStage, stageForLevel } from '@/domain/levels';
+import { dayKey } from '@/lib/date';
 import { useGamification } from '@/store/useGamification';
 import { useWater } from '@/store/useWater';
 
@@ -19,8 +21,17 @@ export default function Conquistas() {
   const bestStreak = useGamification((s) => s.bestStreak);
   const freezes = useGamification((s) => s.freezesAvailable);
   const xp = useGamification((s) => s.xp);
+  const gardenUnlocked = useGamification((s) => s.gardenUnlocked);
 
-  const conquistas = achievementsOf({ days, streak });
+  const conquistas = achievementsOf({
+    days,
+    // `bestStreak` e não `streak`: com a ofensiva atual, quem chegava a 30 dias e
+    // perdia a sequência via a conquista voltar para cinza.
+    bestStreak,
+    gardenUnlocked,
+    gardenTotal: GARDEN_ELEMENTS.length,
+    hoje: dayKey(),
+  });
   const desbloqueadas = conquistas.filter((c) => c.unlocked).length;
 
   const nivel = levelFromXp(xp);
