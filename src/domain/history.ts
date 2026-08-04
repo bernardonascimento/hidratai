@@ -166,21 +166,27 @@ export type MonthSlot = {
 const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 /**
- * Média diária de **cada mês do ano corrente**, de janeiro a dezembro.
+ * Média diária de cada mês de **um** ano, de janeiro a dezembro.
  *
  * Não são "os últimos 12 meses": naquela forma a lista começava em agosto do ano
  * passado e terminava em julho, o que não é um ano que alguém reconheça. Aqui janeiro
  * é sempre o primeiro e dezembro o último, e os meses que ainda não chegaram vêm
  * marcados como futuros em vez de zerados.
+ *
+ * `ano` é parâmetro, e antes não era — o ano vinha fixo de `hoje`. Em 1º de janeiro quem
+ * usou o app em dezembro abria a aba e via um gráfico vazio, e o ano anterior ficava
+ * **invisível para sempre**: os dados estavam no disco e nenhuma tela os alcançava.
  */
 export function yearMonths(
   days: Record<string, DayLog>,
   hoje: string = dayKey(),
+  ano?: number,
 ): MonthSlot[] {
-  const [ano, mesHoje] = hoje.split('-').map(Number);
+  const [anoHoje, mesHoje] = hoje.split('-').map(Number);
+  const alvo = ano ?? anoHoje;
 
   return Array.from({ length: 12 }, (_, mes0) => {
-    const chave = `${ano}-${String(mes0 + 1).padStart(2, '0')}`;
+    const chave = `${alvo}-${String(mes0 + 1).padStart(2, '0')}`;
     const doMes = Object.values(days).filter((d) => d.date.startsWith(chave));
     const soma = doMes.reduce((acc, d) => acc + d.totalHydrationMl, 0);
 
@@ -189,9 +195,24 @@ export function yearMonths(
       label: MESES_CURTOS[mes0],
       averageMl: doMes.length > 0 ? Math.round(soma / doMes.length) : 0,
       daysTracked: doMes.length,
-      future: mes0 + 1 > mesHoje,
+      // Ano passado não tem mês futuro; ano que vem tem os doze.
+      future: alvo > anoHoje || (alvo === anoHoje && mes0 + 1 > mesHoje),
     };
   });
+}
+
+/**
+ * Anos que o usuário pode ver, do mais antigo ao mais recente.
+ *
+ * Inclui **sempre** o ano corrente, mesmo sem registro nenhum: é o ano que a aba abre
+ * por padrão, e uma lista vazia deixaria o seletor sem nada para selecionar. Fora dele,
+ * só anos que têm dado — navegar por anos vazios é atrito sem informação.
+ */
+export function yearsWithData(days: Record<string, DayLog>, hoje: string = dayKey()): number[] {
+  const anoHoje = Number(hoje.slice(0, 4));
+  const anos = new Set<number>([anoHoje]);
+  for (const chave of Object.keys(days)) anos.add(Number(chave.slice(0, 4)));
+  return [...anos].sort((a, b) => a - b);
 }
 
 /**

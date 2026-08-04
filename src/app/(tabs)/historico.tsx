@@ -1,7 +1,15 @@
-import { CalendarCheck, Check, Droplets, Star, Target } from 'lucide-react-native';
+import {
+  CalendarCheck,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Droplets,
+  Star,
+  Target,
+} from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
@@ -12,11 +20,18 @@ import { SegmentedPills } from '@/components/SegmentedPills';
 import { WeekBars } from '@/components/WeekBars';
 import { YearBars } from '@/components/YearBars';
 import { WATER_DRINK_ID } from '@/domain/drinks';
-import { monthGrid, shortDate, statsOf, weekSlots, yearMonths } from '@/domain/history';
+import {
+  monthGrid,
+  shortDate,
+  statsOf,
+  weekSlots,
+  yearMonths,
+  yearsWithData,
+} from '@/domain/history';
 import { dayKey } from '@/lib/date';
 import { formatVolume } from '@/lib/format';
 import { tokens } from '@/design/tokens';
-import { registerFeedback } from '@/lib/haptics';
+import { registerFeedback, tapFeedback } from '@/lib/haptics';
 import { syncReminders } from '@/lib/notifications';
 import { useGamification } from '@/store/useGamification';
 import {
@@ -54,6 +69,8 @@ export default function Historico() {
   const totalHoje = useTodayHydrationMl();
   const ontem = useYesterdayLog();
   const [vista, setVista] = useState<Vista>('semana');
+  /** `null` = o ano corrente. Só sai disso quem toca nas setas. */
+  const [anoEscolhido, setAnoEscolhido] = useState<number | null>(null);
   const [dia, setDia] = useState<Dia>('hoje');
 
   const olhandoOntem = dia === 'ontem';
@@ -89,7 +106,11 @@ export default function Historico() {
   // `restDay` na quarta posição exige preencher a terceira.
   const semana = weekSlots(days, goalMl, dayKey(), restDay);
   const grade = monthGrid(days, goalMl, dayKey(), restDay);
-  const ano = yearMonths(days);
+  const anosDisponiveis = yearsWithData(days, dayKey());
+  const anoAtual = anosDisponiveis[anosDisponiveis.length - 1];
+  const anoVisto = anoEscolhido ?? anoAtual;
+  const ano = yearMonths(days, dayKey(), anoVisto);
+  const iAno = anosDisponiveis.indexOf(anoVisto);
   // As estatísticas seguem o recorte escolhido; no ano, o mês corrente é o recorte
   // mais próximo que existe — a média anual seria outra conta.
   const stats = statsOf(vista === 'semana' ? semana : grade.slots);
@@ -118,6 +139,28 @@ export default function Historico() {
 
           {vista === 'ano' && (
             <Card>
+              {/* O seletor só existe com mais de um ano de dado. No primeiro ano de uso
+                  ele seria um cabeçalho com duas setas desligadas — controle que não
+                  controla nada. */}
+              {anosDisponiveis.length > 1 && (
+                <View className="flex-row items-center justify-between pb-3">
+                  <SetaAno
+                    direcao="anterior"
+                    disponivel={iAno > 0}
+                    onPress={() => setAnoEscolhido(anosDisponiveis[iAno - 1])}
+                  />
+                  <Text
+                    maxFontSizeMultiplier={1.2}
+                    className="font-displayBold text-xl text-texto">
+                    {anoVisto}
+                  </Text>
+                  <SetaAno
+                    direcao="proximo"
+                    disponivel={iAno < anosDisponiveis.length - 1}
+                    onPress={() => setAnoEscolhido(anosDisponiveis[iAno + 1])}
+                  />
+                </View>
+              )}
               <YearBars meses={ano} goalMl={goalMl} mesAtual={grade.month} />
             </Card>
           )}
@@ -217,6 +260,47 @@ export default function Historico() {
         </ScrollView>
       </SafeAreaView>
     </View>
+  );
+}
+
+/**
+ * Seta do seletor de ano.
+ *
+ * Indisponível fica **visível e apagada**, não escondida: sumir a seta muda a largura do
+ * cabeçalho e o ano dança de lugar ao navegar. Apagada, o layout não se move e a pessoa
+ * vê que chegou na ponta.
+ *
+ * `disabled` no `Pressable` e não só a cor: sem ele o toque continua acontecendo, o
+ * haptic dispara e o app parece ter engasgado.
+ */
+function SetaAno({
+  direcao,
+  disponivel,
+  onPress,
+}: {
+  direcao: 'anterior' | 'proximo';
+  disponivel: boolean;
+  onPress: () => void;
+}) {
+  const Icone = direcao === 'anterior' ? ChevronLeft : ChevronRight;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !disponivel }}
+      accessibilityLabel={direcao === 'anterior' ? 'Ano anterior' : 'Próximo ano'}
+      disabled={!disponivel}
+      onPress={() => {
+        tapFeedback();
+        onPress();
+      }}
+      className="min-h-[44px] min-w-[44px] items-center justify-center">
+      <Icone
+        size={26}
+        color={disponivel ? tokens.agua : tokens.linha}
+        strokeWidth={2.8}
+      />
+    </Pressable>
   );
 }
 

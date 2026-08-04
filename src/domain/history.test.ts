@@ -6,6 +6,7 @@ import {
   weekdayFull,
   weekdayShort,
   yearMonths,
+  yearsWithData,
 } from '@/domain/history';
 import type { DayLog } from '@/domain/types';
 import { emptyDay, recalcDay } from '@/domain/water';
@@ -215,5 +216,60 @@ describe('dia livre no calendário', () => {
     const com = statsOf(weekSlots(DAYS, 2000, HOJE, DOMINGO));
     const sem = statsOf(weekSlots(DAYS, 2000, HOJE, null));
     expect(com).toEqual(sem);
+  });
+});
+
+describe('vista de Ano em mais de um ano', () => {
+  /** Dois anos de dado: dezembro de 2025 e janeiro de 2026. */
+  const DOIS_ANOS: Record<string, DayLog> = {
+    '2025-12-10': dia('2025-12-10', 2200),
+    '2025-12-20': dia('2025-12-20', 1800),
+    '2026-01-05': dia('2026-01-05', 2000),
+  };
+
+  it('o ano anterior continua alcançável em 1º de janeiro', () => {
+    /**
+     * ESTE é o defeito que a feature conserta. Antes, `yearMonths` fixava o ano em
+     * `hoje`: no dia 1º de janeiro a aba abria vazia e dezembro ficava invisível para
+     * sempre, com o dado no disco e nenhuma tela capaz de mostrá-lo.
+     */
+    const dezembro = yearMonths(DOIS_ANOS, '2026-01-01', 2025).find(
+      (m) => m.month === '2025-12',
+    );
+
+    expect(dezembro?.daysTracked).toBe(2);
+    expect(dezembro?.averageMl).toBe(2000);
+  });
+
+  it('sem o ano explícito, segue mostrando o ano corrente', () => {
+    const meses = yearMonths(DOIS_ANOS, '2026-01-01');
+    expect(meses.every((m) => m.month.startsWith('2026'))).toBe(true);
+  });
+
+  it('ano passado não tem mês futuro', () => {
+    // O ano inteiro já aconteceu, então marcar dezembro como "ainda não chegou" seria
+    // apagá-lo do gráfico com o tom fraco de mês futuro.
+    const meses = yearMonths(DOIS_ANOS, '2026-01-01', 2025);
+    expect(meses.some((m) => m.future)).toBe(false);
+  });
+
+  it('ano corrente marca como futuro só o que vem depois de hoje', () => {
+    const meses = yearMonths(DOIS_ANOS, '2026-03-15', 2026);
+    expect(meses.filter((m) => m.future).map((m) => m.label)).toEqual([
+      'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez',
+    ]);
+  });
+
+  it('yearsWithData lista os anos com dado, em ordem, com o corrente sempre presente', () => {
+    expect(yearsWithData(DOIS_ANOS, '2026-01-01')).toEqual([2025, 2026]);
+    // Sem registro nenhum, o ano de hoje ainda tem de aparecer: é o que a aba abre, e
+    // uma lista vazia deixaria o seletor sem nada para selecionar.
+    expect(yearsWithData({}, '2026-01-01')).toEqual([2026]);
+  });
+
+  it('um ano só de dado não oferece navegação', () => {
+    // É o que faz o seletor não aparecer no primeiro ano de uso.
+    const soEsteAno = { '2026-01-05': dia('2026-01-05', 2000) };
+    expect(yearsWithData(soEsteAno, '2026-03-01')).toHaveLength(1);
   });
 });
