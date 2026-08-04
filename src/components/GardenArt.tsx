@@ -112,6 +112,7 @@ function desenho(id: GardenElementId) {
       );
 
     case 'pedrinhas':
+    case 'pedrinhas2':
       return (
         <G>
           <Ellipse cx="30" cy="76" rx="18" ry="12" fill={PEDRA} />
@@ -129,6 +130,7 @@ function desenho(id: GardenElementId) {
       );
 
     case 'nuvem':
+    case 'nuvem2':
       return (
         <G>
           <Circle cx="36" cy="56" r="18" fill={tokens.canvas} />
@@ -198,6 +200,7 @@ function desenho(id: GardenElementId) {
     // ---------- Adereços de chão ----------
 
     case 'grama':
+    case 'grama4':
       return (
         <G>
           {[24, 38, 50, 62, 76].map((x, i) => (
@@ -263,16 +266,6 @@ function desenho(id: GardenElementId) {
           <Rect x="18" y="48" width="64" height="12" rx="5" fill={TERRA} />
           <Rect x="26" y="58" width="9" height="32" rx="4" fill={TERRA_ESCURA} />
           <Rect x="65" y="58" width="9" height="32" rx="4" fill={TERRA_ESCURA} />
-        </G>
-      );
-
-    case 'lanterna':
-      return (
-        <G>
-          <Rect x="46" y="14" width="8" height="18" rx="4" fill={PEDRA_ESCURA} />
-          <Path d="M32 34 H68 L62 74 H38 Z" fill={tokens.xp} opacity={0.9} />
-          <Rect x="28" y="30" width="44" height="8" rx="4" fill={PEDRA_ESCURA} />
-          <Rect x="34" y="72" width="32" height="8" rx="4" fill={PEDRA_ESCURA} />
         </G>
       );
 
@@ -359,6 +352,21 @@ function desenho(id: GardenElementId) {
       );
 
     // ---------- Céu ----------
+
+    case 'borboleta':
+      return (
+        <G>
+          {/* Asas em dois pares espelhados, o de cima maior — é o que faz ler como
+              borboleta e não como laço. Rosa da tulipa, para não inventar cor nova. */}
+          <Ellipse cx="34" cy="38" rx="17" ry="21" fill="#E86A9A" transform="rotate(-18 34 38)" />
+          <Ellipse cx="66" cy="38" rx="17" ry="21" fill="#E86A9A" transform="rotate(18 66 38)" />
+          <Ellipse cx="38" cy="64" rx="12" ry="14" fill="#D4507F" transform="rotate(-12 38 64)" />
+          <Ellipse cx="62" cy="64" rx="12" ry="14" fill="#D4507F" transform="rotate(12 62 64)" />
+          <Rect x="46" y="30" width="8" height="42" rx="4" fill={TERRA_ESCURA} />
+          <Path d="M50 32 C 44 22 38 20 36 22" stroke={TERRA_ESCURA} strokeWidth="3" fill="none" strokeLinecap="round" />
+          <Path d="M50 32 C 56 22 62 20 64 22" stroke={TERRA_ESCURA} strokeWidth="3" fill="none" strokeLinecap="round" />
+        </G>
+      );
 
     case 'passarinho':
       return (

@@ -59,7 +59,7 @@ export function GardenScene({ unlocked, mood = 'animada' }: Props) {
       ))}
 
       {/* A Gotinha mora no centro-baixo, sempre por cima do cenário */}
-      <View className="absolute bottom-6 left-0 right-0 items-center">
+      <View className="absolute bottom-14 left-0 right-0 items-center">
         <Gotinha mood={mood} size={92} />
       </View>
 

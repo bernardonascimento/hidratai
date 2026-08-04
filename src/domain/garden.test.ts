@@ -40,15 +40,17 @@ describe('catálogo do Cantinho', () => {
 
   it('deixa livre o vão onde a Gotinha mora', () => {
     /**
-     * A Gotinha é desenhada **por cima** de tudo, com 92pt, centrada e a 24pt do fundo.
-     * Num cenário de ~303×250 isso a coloca em x de 0.35 a 0.65 e y de 0.54 a 0.90.
-     * Peça posicionada ali fica atrás dela — o usuário paga gotas por algo que não vê.
+     * A Gotinha é desenhada **por cima** de tudo, com 92pt e centrada. Peça posicionada
+     * atrás dela é gota paga por algo que não se vê.
      *
-     * A primeira versão deste teste usava uma área menor (x 0.38–0.62, y > 0.75) e
-     * deixava passar duas peças que caíam no colo dela.
+     * O retângulo sai da posição real no `GardenScene`: `bottom-14` são 56pt do fundo, e
+     * num cenário de ~303×250 isso dá x de 0.35 a 0.65 e y de 0.41 a 0.78. **Se ela
+     * subir ou descer no componente, estes números mudam** — já mudaram uma vez, quando
+     * ela foi de `bottom-6` para `bottom-14`, e este teste apontou a poça como se fosse
+     * defeito quando na verdade a peça tinha ficado abaixo dos pés dela.
      */
     const naFrenteDela = GARDEN_ELEMENTS.filter(
-      (e) => e.x > 0.35 && e.x < 0.65 && e.y > 0.54 && e.y < 0.9,
+      (e) => e.x > 0.35 && e.x < 0.65 && e.y > 0.41 && e.y < 0.78,
     ).map((e) => `${e.id} (${e.x}, ${e.y})`);
 
     expect(naFrenteDela).toEqual([]);
@@ -73,11 +75,16 @@ describe('catálogo do Cantinho', () => {
      * `regador` em 0.96 e `cacto` em 0.92 — e o teste anterior aprovava, porque só olhava
      * se o centro caía entre 0 e 1.
      *
-     * A tolerância de 0.03 existe porque os desenhos não preenchem o quadro de 100×100:
-     * quase todos têm margem interna, então um vazamento pequeno não aparece.
+     * `MEIA_PECA` é 0.10 e não 0.139 porque **nenhum desenho preenche o quadro de
+     * 100×100**: todos ficam nos ~70% centrais, com margem interna. Usar a metade
+     * geométrica reprovava peças que na tela estavam inteiras — girassol em x=0.10 e
+     * samambaia em 0.92 foram aprovadas visualmente e o teste as acusava.
+     *
+     * Isto é um modelo, não uma medida: se algum desenho novo chegar às bordas do
+     * próprio quadro, o número aqui deixa de valer para ele.
      */
-    const MEIA_PECA = 0.139;
-    const TOLERANCIA = 0.03;
+    const MEIA_PECA = 0.1;
+    const TOLERANCIA = 0.02;
 
     const cortadas = GARDEN_ELEMENTS.filter((e) => {
       const meia = MEIA_PECA * e.scale;
