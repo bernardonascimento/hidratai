@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { WATER_DRINK_ID, findDrink } from '@/domain/drinks';
-import { hourMinute, perennialSlots, phraseFor, reminderSlots } from '@/domain/reminders';
+import { hourMinute, momentoDe, perennialSlots, phraseFor, reminderSlots } from '@/domain/reminders';
 import { dayKey } from '@/lib/date';
 import { useProfile } from '@/store/useProfile';
 import { useWater } from '@/store/useWater';
@@ -19,6 +19,20 @@ const PERENES = 4;
 
 /** Volume da ação rápida — o padrão da água no catálogo, não um número solto. */
 export const VOLUME_ACAO = findDrink(WATER_DRINK_ID)?.defaultMl ?? 250;
+
+/**
+ * O nome do app vai no **título**, e a frase no **corpo** — não `"Hidrataí: frase"`
+ * num título só.
+ *
+ * Testado com `simctl push` no simulador, porque a diferença não é de gosto: a tarja
+ * compacta do iOS dá **uma linha** ao título, com espaço para ~30 caracteres. Com o
+ * prefixo, "Hidrataí: Falta pouco para a meta." chegava como *"Hidrataí: Falta pouco
+ * para a m…"* — os 10 caracteres da marca comiam o fim da mensagem.
+ *
+ * Separando, a tarja usa duas linhas: "Hidrataí" em negrito e a frase inteira embaixo.
+ * A marca fica mais visível do que era no prefixo, e a frase não paga nada.
+ */
+const TITULO = 'Hidrataí';
 
 export type SyncResult = {
   scheduled: number;
@@ -161,7 +175,15 @@ export async function syncReminders(): Promise<SyncResult> {
 
   const hoje = dayKey();
   const agua = useWater.getState();
-  const metaBatidaHoje = (agua.days[hoje]?.totalHydrationMl ?? 0) >= (agua.days[hoje]?.goalMl ?? agua.goalMl);
+  const metaHoje = agua.days[hoje]?.goalMl ?? agua.goalMl;
+  const totalHoje = agua.days[hoje]?.totalHydrationMl ?? 0;
+  const metaBatidaHoje = totalHoje >= metaHoje;
+  /**
+   * Progresso de hoje, e **só de hoje**. É o único dia sobre o qual a frase pode
+   * afirmar algo: `syncReminders()` roda a cada registro e a cada abertura, então os
+   * avisos de hoje que ainda não dispararam são reescritos com o número fresco.
+   */
+  const fracaoHoje = metaHoje > 0 ? totalHoje / metaHoje : 0;
 
   let agendadas = 0;
 
@@ -175,7 +197,14 @@ export async function syncReminders(): Promise<SyncResult> {
         // Semente do dia, não fixa: `syncReminders` roda a cada abertura, então as
         // frases perenes se renovam com o uso. Quem sumir por semanas fica com as
         // últimas — melhor repetido que calado.
-        title: phraseFor(hoje, posicao.get(minuto) ?? 1),
+        //
+        // **Sem `fracao` de propósito.** Um `DAILY` repete para sempre com o texto que
+        // recebeu, então "falta pouco para a meta" estaria certo no dia em que foi
+        // agendado e errado em todos os seguintes. Estas quatro frases reagem só ao
+        // horário — e continuam válidas até para quem já bateu a meta, que é o caso em
+        // que esta camada dispara mesmo assim.
+        title: TITULO,
+        body: phraseFor(hoje, posicao.get(minuto) ?? 1, { momento: momentoDe(minuto) }),
         categoryIdentifier: CATEGORIA,
         // **Sem badge de propósito.** Um `DAILY` é agendado uma vez e repete para
         // sempre, então qualquer número que eu ponha aqui estaria certo em um dia e
@@ -203,7 +232,13 @@ export async function syncReminders(): Promise<SyncResult> {
       contadorBadge += 1;
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: phraseFor(dayKey(data), posicao.get(minuto) ?? 1),
+          // Só hoje leva o progresso. Amanhã e depois de amanhã ainda não aconteceram,
+          // então prometer "falta pouco" neles seria adivinhar.
+          title: TITULO,
+          body: phraseFor(dayKey(data), posicao.get(minuto) ?? 1, {
+            momento: momentoDe(minuto),
+            fracao: dia === 0 ? fracaoHoje : undefined,
+          }),
           categoryIdentifier: CATEGORIA,
           badge: contadorBadge,
         },

@@ -2,6 +2,7 @@ import {
   DEFAULT_INTERVAL_MIN,
   REMINDER_PHRASES_COUNT,
   hourMinute,
+  momentoDe,
   perennialSlots,
   phraseFor,
   reminderSlots,
@@ -126,31 +127,96 @@ describe('hourMinute', () => {
   });
 });
 
+describe('momentoDe', () => {
+  it('divide o dia em manhã, tarde e noite', () => {
+    expect(momentoDe(7 * 60)).toBe('manha');
+    expect(momentoDe(11 * 60 + 59)).toBe('manha');
+    expect(momentoDe(12 * 60)).toBe('tarde');
+    expect(momentoDe(17 * 60 + 59)).toBe('tarde');
+    expect(momentoDe(18 * 60)).toBe('noite');
+    expect(momentoDe(23 * 60)).toBe('noite');
+  });
+});
+
 describe('phraseFor (§6.3)', () => {
-  it('é estável para o mesmo dia e índice', () => {
-    expect(phraseFor('2026-07-29', 3)).toBe(phraseFor('2026-07-29', 3));
+  const MANHA = { momento: 'manha' } as const;
+  const TARDE = { momento: 'tarde' } as const;
+  const NOITE = { momento: 'noite' } as const;
+
+  /** Todas as combinações que a produção pode gerar. */
+  const CONTEXTOS = [
+    MANHA,
+    TARDE,
+    NOITE,
+    { momento: 'manha', fracao: 0 },
+    { momento: 'tarde', fracao: 0 },
+    { momento: 'noite', fracao: 0.2 },
+    { momento: 'tarde', fracao: 0.5 },
+    { momento: 'noite', fracao: 0.8 },
+    { momento: 'manha', fracao: 1 },
+  ] as const;
+
+  it('é estável para o mesmo dia, índice e contexto', () => {
+    expect(phraseFor('2026-07-29', 3, TARDE)).toBe(phraseFor('2026-07-29', 3, TARDE));
   });
 
-  it('não repete no mesmo dia entre slots vizinhos', () => {
-    const doDia = Array.from({ length: 10 }, (_, i) => phraseFor('2026-07-29', i));
-    expect(new Set(doDia).size).toBe(doDia.length);
+  it('não repete dentro do mesmo grupo, até esgotá-lo', () => {
+    // Oito é o tamanho de cada grupo, e o passo 7 é primo com 8 — se algum grupo
+    // mudar de tamanho para um número que compartilhe fator com 7, isto quebra.
+    for (const ctx of CONTEXTOS) {
+      const oito = Array.from({ length: 8 }, (_, i) => phraseFor('2026-07-29', i, ctx));
+      expect(new Set(oito).size).toBe(8);
+    }
   });
 
   it('muda de um dia para o outro', () => {
-    const hoje = Array.from({ length: 6 }, (_, i) => phraseFor('2026-07-29', i));
-    const amanha = Array.from({ length: 6 }, (_, i) => phraseFor('2026-07-30', i));
+    const hoje = Array.from({ length: 6 }, (_, i) => phraseFor('2026-07-29', i, TARDE));
+    const amanha = Array.from({ length: 6 }, (_, i) => phraseFor('2026-07-30', i, TARDE));
     expect(hoje).not.toEqual(amanha);
   });
 
-  it('nunca usa emoji nem linguagem de culpa', () => {
-    const todas = Array.from({ length: REMINDER_PHRASES_COUNT * 2 }, (_, i) =>
-      phraseFor('2026-07-29', i),
+  it('reage ao momento do dia', () => {
+    const manha = new Set(Array.from({ length: 8 }, (_, i) => phraseFor('2026-07-29', i, MANHA)));
+    const noite = new Set(Array.from({ length: 8 }, (_, i) => phraseFor('2026-07-29', i, NOITE)));
+    // Grupos disjuntos: nenhuma frase de manhã pode sair à noite.
+    for (const f of manha) expect(noite.has(f)).toBe(false);
+  });
+
+  it('estar em zero pela manhã não vira convite de retomada', () => {
+    // Acordar sem ter bebido é o normal, não um dia perdido — só da tarde em diante o
+    // progresso baixo muda o tom.
+    const semDado = Array.from({ length: 8 }, (_, i) => phraseFor('2026-07-29', i, MANHA));
+    const zerado = Array.from({ length: 8 }, (_, i) =>
+      phraseFor('2026-07-29', i, { momento: 'manha', fracao: 0 }),
     );
+    expect(zerado).toEqual(semDado);
+  });
+
+  it('sem fracao, o texto só depende do horário', () => {
+    // É o contrato da camada perene: `DAILY` repete para sempre, então nada que ela
+    // diga pode depender do progresso de um dia específico.
+    const comMeta = Array.from({ length: 8 }, (_, i) =>
+      phraseFor('2026-07-29', i, { momento: 'tarde', fracao: 1 }),
+    );
+    const semDado = Array.from({ length: 8 }, (_, i) => phraseFor('2026-07-29', i, TARDE));
+    expect(comMeta).not.toEqual(semDado);
+  });
+
+  it('nunca usa emoji, culpa, nem volume exato', () => {
+    const todas = new Set<string>();
+    for (const ctx of CONTEXTOS) {
+      for (let i = 0; i < REMINDER_PHRASES_COUNT; i += 1) {
+        todas.add(phraseFor('2026-07-29', i, ctx));
+      }
+    }
 
     for (const frase of todas) {
       expect(frase).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
       expect(frase.toLowerCase()).not.toMatch(/falh|esque|devia|deveria|atras/);
       expect(frase.split(/\s+/).length).toBeLessThanOrEqual(8);
+      // Volume ou porcentagem cravados envelheceriam: o texto é escrito no
+      // agendamento e o progresso pode mudar antes de disparar.
+      expect(frase).not.toMatch(/\d+\s*(ml|l\b|%)/i);
     }
   });
 });
