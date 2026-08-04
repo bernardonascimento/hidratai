@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Animated, {
   Easing,
   interpolateColor,
@@ -28,6 +28,7 @@ import { useReducedMotionPref } from '@/lib/motion';
  * porque são `rect`.
  */
 const AnimatedUse = Animated.createAnimatedComponent(Use);
+const AnimatedText = Animated.createAnimatedComponent(SvgText);
 
 // Geometria da silhueta. A proporção importa: gargalo curto e largo o suficiente
 // para a figura dizer "garrafa" — e não "bateria" — em 200 ms.
@@ -107,6 +108,8 @@ function camadaDeOnda(periodos: number, amplitude: number, opacidade: number, se
   return {
     d: wavePath(WAVE_W, periodos, amplitude, WAVE_DEPTH),
     periodo: WAVE_W / periodos,
+    /** Quanto a crista sobe e o vale desce em relação ao nível médio. */
+    amplitude,
     opacidade,
     /** Segundos para a onda percorrer um período inteiro. */
     segundos,
@@ -325,6 +328,36 @@ export function ProgressBottle({
     x: deriva(faseA.value, ONDA_A.periodo, false),
     y: superficie(),
   }));
+  /**
+   * ## O texto branco no Android
+   *
+   * No Android o recorte animado **não funciona**, e o motivo não é o `<Use>`: nenhum
+   * `animatedProps` em filho de `ClipPath` chega ao nativo, porque o recorte é resolvido
+   * na criação da camada e não é reavaliado a cada quadro. Testado com `<Use>` e com
+   * `<Rect>` — nos dois o número ficava escuro dentro da água.
+   *
+   * Então lá não se recorta: **troca-se a cor**. `fill` animado funciona no Android (é
+   * como a água vira verde ao bater a meta), e cada linha de texto decide a própria cor
+   * comparando a superfície com a altura em que ela está desenhada.
+   *
+   * O que se perde: no iOS a troca acontece na **borda molhada**, então o número fica
+   * meio escuro e meio branco enquanto a água o atravessa. No Android ele troca de uma
+   * vez. É degradação aceitável na plataforma que não permite o recorte, e não toca no
+   * iOS, que já estava certo.
+   *
+   * Os limiares são o meio visual de cada linha, não a linha de base: a base fica no pé
+   * das letras, e comparar por ela faria a cor trocar quando a água já cobria metade do
+   * glifo.
+   */
+  const CENTRO_NUMERO = TEXT_Y - 13;
+  const CENTRO_SUB = TEXT_Y + 24 - 6;
+
+  const corNumeroProps = useAnimatedProps(() => ({
+    fill: superficie() < CENTRO_NUMERO ? tokens.canvas : tokens.texto,
+  }));
+  const corSubProps = useAnimatedProps(() => ({
+    fill: superficie() < CENTRO_SUB ? tokens.canvas : tokens.textoOff,
+  }));
 
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
   const anelStyle = useAnimatedStyle(() => ({
@@ -450,33 +483,56 @@ export function ProgressBottle({
               borda molhada — e não há como sobrar buraco, porque a camada de baixo
               está sempre completa. Uma cor só não resolveria: a superfície corta o
               texto no meio. */}
-          {(
-            [
-              { chave: 'seco', recorte: undefined, cor: tokens.texto, corSub: tokens.textoOff },
-              { chave: 'molhado', recorte: 'url(#submerso)', cor: tokens.canvas, corSub: tokens.canvas },
-            ] as const
-          ).map(({ chave, recorte, cor, corSub }) => (
-            <G key={chave} clipPath={recorte}>
-              <SvgText
+          {Platform.OS === 'android' ? (
+            <G>
+              <AnimatedText
                 x={CX}
                 y={TEXT_Y}
                 textAnchor="middle"
                 fontFamily="Fredoka_700Bold"
                 fontSize={38}
-                fill={cor}>
+                animatedProps={corNumeroProps}>
                 {par.value}
-              </SvgText>
-              <SvgText
+              </AnimatedText>
+              <AnimatedText
                 x={CX}
                 y={TEXT_Y + 24}
                 textAnchor="middle"
                 fontFamily="Nunito_600SemiBold"
                 fontSize={16}
-                fill={corSub}>
+                animatedProps={corSubProps}>
                 {`de ${par.total} ${par.unit}`}
-              </SvgText>
+              </AnimatedText>
             </G>
-          ))}
+          ) : (
+            (
+              [
+                { chave: 'seco', recorte: undefined, cor: tokens.texto, corSub: tokens.textoOff },
+                { chave: 'molhado', recorte: 'url(#submerso)', cor: tokens.canvas, corSub: tokens.canvas },
+              ] as const
+            ).map(({ chave, recorte, cor, corSub }) => (
+              <G key={chave} clipPath={recorte}>
+                <SvgText
+                  x={CX}
+                  y={TEXT_Y}
+                  textAnchor="middle"
+                  fontFamily="Fredoka_700Bold"
+                  fontSize={38}
+                  fill={cor}>
+                  {par.value}
+                </SvgText>
+                <SvgText
+                  x={CX}
+                  y={TEXT_Y + 24}
+                  textAnchor="middle"
+                  fontFamily="Nunito_600SemiBold"
+                  fontSize={16}
+                  fill={corSub}>
+                  {`de ${par.total} ${par.unit}`}
+                </SvgText>
+              </G>
+            ))
+          )}
         </Svg>
       </Animated.View>
     </View>
