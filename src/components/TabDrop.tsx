@@ -12,7 +12,7 @@ import Svg, { Circle, ClipPath, Defs, G, Path, Rect } from 'react-native-svg';
 
 import { tokens } from '@/design/tokens';
 import { useReducedMotionPref } from '@/lib/motion';
-import { useTodayHydrationMl, useWater } from '@/store/useWater';
+import { useTodayGoalMl, useTodayHydrationMl } from '@/store/useWater';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -66,7 +66,7 @@ const RESPIRO_SEG = 4;
  */
 export function TabDrop() {
   const total = useTodayHydrationMl();
-  const goalMl = useWater((s) => s.goalMl);
+  const goalMl = useTodayGoalMl();
   const reduzido = useReducedMotionPref();
 
   const progresso = goalMl > 0 ? Math.min(1, Math.max(0, total / goalMl)) : 0;

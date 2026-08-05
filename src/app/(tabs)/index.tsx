@@ -31,6 +31,7 @@ import { useLogicalDay } from '@/store/useLogicalDay';
 import { useToast } from '@/store/useToast';
 import {
   useTodayEntries,
+  useTodayGoalMl,
   useTodayHydrationMl,
   useTodayLog,
   useWater,
@@ -80,7 +81,9 @@ const ESCALA_MIN = 0.85;
 const ESCALA_MAX = 1.85;
 
 export default function Hoje() {
-  const goalMl = useWater((s) => s.goalMl);
+  // A meta **do dia**, não a corrente: é ela que decide `metGoal`, e a tela não pode
+  // discordar do próprio placar. Ver `useTodayGoalMl`.
+  const goalMl = useTodayGoalMl();
   const addEntry = useWater((s) => s.addEntry);
 
   // XP e ofensiva agora vêm da store de gamificação, não da água.

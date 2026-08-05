@@ -15,6 +15,34 @@ export const XP_BONUS_META = 50;
 /** Teto diário do §7.2: sem ele, fracionar 30 registros de 50 ml vira farm. */
 export const XP_MAX_POR_DIA = 100;
 
+/**
+ * XP que um dia vale — **função do dia, não da ordem dos toques**.
+ *
+ * O XP era somado e devolvido por evento: `+10` a cada registro, `+50` ao bater a meta,
+ * e o mesmo de volta ao desfazer. Só que o ganho passa pelo teto diário e a devolução
+ * não passava, então os dois lados discordavam sempre que o teto entrava:
+ *
+ * - 6 copos de 500 numa meta de 3 L fecham o dia em 100 (50 dos cinco primeiros + 50 do
+ *   sexto, que pediria 60 e só cabia 50)
+ * - um 7º copo ganha **0**, porque o teto já estourou
+ * - desfazer esse 7º devolvia **10** — dez pontos que nunca foram dados, tirados do XP
+ *   acumulado de dias anteriores
+ *
+ * Calculando o dia inteiro de uma vez o problema desaparece por construção: registrar e
+ * desfazer viram apenas a diferença entre o antes e o depois, e desfazer o que não
+ * pagou dá diferença zero. Bug real, achado em 05/08/2026.
+ *
+ * Ressalva conhecida: preencher ontem (`addEntryYesterday`) não paga XP de propósito,
+ * mas conta como registro aqui. Remover **essa** entrada depois devolve 10 que não
+ * foram dados — o mesmo erro de antes, sobrando num canto bem mais estreito. Consertar
+ * exigiria gravar o XP concedido dentro do `DayLog`.
+ */
+export function xpOfDay(day: Pick<DayLog, 'entries' | 'metGoal'> | undefined): number {
+  if (!day) return 0;
+  const bruto = day.entries.length * XP_POR_REGISTRO + (day.metGoal ? XP_BONUS_META : 0);
+  return Math.min(XP_MAX_POR_DIA, bruto);
+}
+
 type GamificationState = {
   xp: number;
   /** XP ganho no dia lógico corrente, para aplicar o teto. */
@@ -34,6 +62,16 @@ type GamificationState = {
 
   /** Gotas do Cantinho: 1 por dia com meta batida, gastas em elementos. */
   drops: number;
+  /**
+   * Último dia que já pagou gota. É o que impede o mesmo dia pagar duas vezes.
+   *
+   * Um campo só, e não uma lista de datas, porque **apenas o dia corrente consegue
+   * pagar**: a gota sai de `onEntryAdded`, que só é chamada por `addEntry`, e essa usa
+   * sempre `dayKey()`. O preenchimento retroativo (`addEntryYesterday`) recalcula a
+   * ofensiva e não passa por aqui de propósito. Depois da virada das 03:00, um dia
+   * anterior não tem mais como receber registro, então não tem mais como cobrar.
+   */
+  lastDropDate: string | null;
   gardenUnlocked: string[];
 
   /** Missões do dia: guardamos **quais** são, nunca se foram cumpridas. */
@@ -77,7 +115,18 @@ type GamificationState = {
     xpAntes: number;
     xpDepois: number;
   };
-  onEntryRemoved: (input: { date: string; volumeMl: number; lostGoal: boolean }) => void;
+  /**
+   * O dia **antes e depois** da remoção, e não só o volume: é a diferença entre os dois
+   * que diz quanto XP aquele registro tinha pago de fato. `dayAfter` vem com a lista já
+   * vazia quando era o último registro do dia.
+   */
+  onEntryRemoved: (input: {
+    date: string;
+    volumeMl: number;
+    lostGoal: boolean;
+    dayBefore: DayLog;
+    dayAfter: DayLog;
+  }) => void;
   unlockElement: (id: string) => boolean;
   /**
    * Marca conquistas como comemoradas e devolve **quais eram novidade**.
@@ -105,6 +154,7 @@ const ESTADO_INICIAL = {
   restDay: null,
   lifetimeMl: 0,
   drops: 0,
+  lastDropDate: null,
   gardenUnlocked: [],
   missionsDate: null,
   missionIds: [],
@@ -178,11 +228,17 @@ export const useGamification = create<GamificationState>()(
       onEntryAdded: ({ date, volumeMl, metGoalNow, days }) => {
         const estado = get();
 
-        // Teto diário: o XP do dia zera quando o dia lógico vira.
+        /**
+         * O XP do registro é a **diferença** entre o que o dia valia e o que passou a
+         * valer, com o teto já dentro de `xpOfDay`. Assim o teto vale igual nas duas
+         * direções, e `xpToday` deixa de ser um contador que caminha sozinho: ele é o
+         * valor do dia, recalculado. Estado que tenha derivado antes desta conta se
+         * conserta no primeiro registro.
+         */
         const mesmoDia = estado.xpTodayDate === date;
-        const jaHoje = mesmoDia ? estado.xpToday : 0;
-        const bruto = XP_POR_REGISTRO + (metGoalNow ? XP_BONUS_META : 0);
-        const xpGained = Math.max(0, Math.min(bruto, XP_MAX_POR_DIA - jaHoje));
+        const valia = mesmoDia ? estado.xpToday : 0;
+        const vale = xpOfDay(days[date]);
+        const xpGained = Math.max(0, vale - valia);
 
         let streakState = {
           streak: estado.streak,
@@ -210,13 +266,28 @@ export const useGamification = create<GamificationState>()(
           };
         }
 
+        /**
+         * A moeda do Cantinho é **dia cumprido**, não volume nem registro: uma gota por
+         * dia, e uma só — daí o `lastDropDate`.
+         *
+         * Sem esse trava, desfazer o último copo e registrar de novo pagava outra gota
+         * a cada volta, porque `metGoalNow` volta a ser verdadeiro. Era gota infinita
+         * em dois toques, e o Cantinho inteiro (633 gotas, uns 2,4 anos de dias) saía
+         * numa tarde. Bug real, achado em 05/08/2026.
+         *
+         * Estado antigo não tem a chave e chega `null`: quem já bateu a meta hoje antes
+         * de atualizar pode ganhar uma gota a mais neste dia. É um erro de uma gota, uma
+         * vez, para o lado generoso — não vale migração.
+         */
+        const ganhaGota = metGoalNow && estado.lastDropDate !== date;
+
         set({
           xp: estado.xp + xpGained,
-          xpToday: jaHoje + xpGained,
+          xpToday: vale,
           xpTodayDate: date,
           lifetimeMl: estado.lifetimeMl + volumeMl,
-          // A moeda do Cantinho é dia cumprido, não volume: uma gota por dia.
-          drops: metGoalNow ? estado.drops + 1 : estado.drops,
+          drops: ganhaGota ? estado.drops + 1 : estado.drops,
+          lastDropDate: ganhaGota ? date : estado.lastDropDate,
           ...streakState,
         });
 
@@ -229,10 +300,20 @@ export const useGamification = create<GamificationState>()(
         };
       },
 
-      onEntryRemoved: ({ date, volumeMl, lostGoal }) => {
+      onEntryRemoved: ({ date, volumeMl, lostGoal, dayBefore, dayAfter }) => {
         const estado = get();
-        const devolver = XP_POR_REGISTRO + (lostGoal ? XP_BONUS_META : 0);
         const mesmoDia = estado.xpTodayDate === date;
+
+        /**
+         * O XP devolvido é a mesma diferença de `onEntryAdded`, lida ao contrário: o que
+         * o dia valia menos o que passou a valer. Desfazer um registro que não pagou
+         * nada, porque o teto do dia já havia estourado, devolve zero.
+         *
+         * Os dois lados vêm de `xpOfDay`, então isto vale para qualquer dia, não só
+         * hoje — o "desfazer" do Histórico alcança dias passados, e ali não existe
+         * contador de XP do dia para consultar.
+         */
+        const devolver = Math.max(0, xpOfDay(dayBefore) - xpOfDay(dayAfter));
 
         const streakState = lostGoal
           ? revertMetGoal({
@@ -245,9 +326,24 @@ export const useGamification = create<GamificationState>()(
             })
           : null;
 
+        /**
+         * XP, ofensiva e litros bebidos voltam atrás; a **gota não**, e a assimetria é
+         * de propósito: gota é moeda gasta, e as outras não são.
+         *
+         * Tirar a gota junto não funciona de nenhum dos dois jeitos. Tirando e liberando
+         * o dia para pagar outra vez, volta o exploit — gasta a gota num elemento,
+         * desfaz, registra de novo e ganha outra, sem limite. Tirando e mantendo o dia
+         * travado, quem só corrigiu um toque errado fica sem a gota de um dia que
+         * cumpriu.
+         *
+         * Então a gota fica. O preço é uma gota indevida para quem bate a meta e depois
+         * apaga água de verdade — uma por dia, no máximo, e para o lado generoso, que é
+         * o do app.
+         */
         set({
           xp: Math.max(0, estado.xp - devolver),
-          xpToday: mesmoDia ? Math.max(0, estado.xpToday - devolver) : estado.xpToday,
+          // O contador do dia passa a ser o valor do dia, não ele mesmo menos algo.
+          xpToday: mesmoDia ? xpOfDay(dayAfter) : estado.xpToday,
           lifetimeMl: Math.max(0, estado.lifetimeMl - volumeMl),
           ...(streakState ?? {}),
         });
@@ -303,6 +399,7 @@ export const useGamification = create<GamificationState>()(
         restDay: state.restDay,
         lifetimeMl: state.lifetimeMl,
         drops: state.drops,
+        lastDropDate: state.lastDropDate,
         gardenUnlocked: state.gardenUnlocked,
         missionsDate: state.missionsDate,
         missionIds: state.missionIds,

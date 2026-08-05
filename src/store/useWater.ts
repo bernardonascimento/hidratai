@@ -167,11 +167,14 @@ export const useWater = create<WaterState>()(
         set({ days });
 
         // Devolve o XP do registro e, se o dia deixou de bater a meta, também o
-        // bônus e a ofensiva daquele dia.
+        // bônus e a ofensiva daquele dia. O dia vai nos dois estados: quanto aquele
+        // registro pagou é a diferença entre eles, e só o jogo sabe fazer essa conta.
         useGamification.getState().onEntryRemoved({
           date,
           volumeMl: removido?.volumeMl ?? 0,
           lostGoal: perdeuMeta,
+          dayBefore: anterior,
+          dayAfter: dia,
         });
       },
 
@@ -223,6 +226,27 @@ export function useYesterdayLog(): DayLog | undefined {
 export function useTodayHydrationMl(): number {
   const hoje = useLogicalDay((s) => s.today);
   return useWater((s) => s.days[hoje]?.totalHydrationMl ?? 0);
+}
+
+/**
+ * **A meta que vale hoje** — a congelada do dia quando ele já começou, e a corrente
+ * enquanto não houver registro.
+ *
+ * É esta que as telas de hoje têm de usar, nunca `goalMl` cru. A meta congela no
+ * primeiro registro do dia (§4.1) e é ela que decide `metGoal`, e portanto a missão de
+ * bater a meta, a ofensiva, o bônus de XP e a gota do Cantinho. Lendo a corrente, a
+ * tela discordava do próprio placar: baixar a meta às 15h deixava a garrafa verde num
+ * dia que o jogo continuava contando como não batido.
+ *
+ * Congelar também é o que impede baixar a meta depois de beber para ganhar o dia e
+ * subir de volta — o mesmo princípio que `addEntryYesterday` já defende.
+ *
+ * `lib/notifications.ts` e `domain/history.ts` sempre fizeram assim; quem divergia
+ * eram as telas.
+ */
+export function useTodayGoalMl(): number {
+  const hoje = useLogicalDay((s) => s.today);
+  return useWater((s) => s.days[hoje]?.goalMl ?? s.goalMl);
 }
 
 export function useTodayEntries(): Entry[] {

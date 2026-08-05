@@ -30,7 +30,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/Card';
 import { Pressable3D } from '@/components/Pressable3D';
 import { tokens } from '@/design/tokens';
-import { GOAL_MAX_ML, GOAL_MIN_ML, computeGoal } from '@/domain/goal';
+import { GOAL_MAX_ML, GOAL_MIN_ML, GOAL_STEP_ML, computeGoal } from '@/domain/goal';
 import { ACTIVITY_OPTIONS, CLIMATE_OPTIONS } from '@/domain/profileOptions';
 import { DEFAULT_REMINDERS, INTERVAL_OPTIONS, reminderSlots } from '@/domain/reminders';
 import { formatClock, formatVolume } from '@/lib/format';
@@ -43,7 +43,7 @@ import {
 import { DEFAULT_PROFILE, useProfile } from '@/store/useProfile';
 import { useGamification } from '@/store/useGamification';
 import { useSettings } from '@/store/useSettings';
-import { useWater } from '@/store/useWater';
+import { useTodayLog, useWater } from '@/store/useWater';
 
 const INTERVALOS = INTERVAL_OPTIONS.map((min) => ({
   value: String(min),
@@ -62,7 +62,11 @@ const DIAS_DA_SEMANA = [
 ];
 
 export default function Ajustes() {
+  // Aqui é a meta **corrente** de propósito: este ± é o ajuste da configuração, não o
+  // placar de hoje. A do dia só aparece no aviso abaixo, quando as duas divergem.
   const goalMl = useWater((s) => s.goalMl);
+  const hojeLog = useTodayLog();
+  const metaCongeladaHoje = hojeLog && hojeLog.goalMl !== goalMl ? hojeLog.goalMl : null;
   const profile = useProfile((s) => s.profile);
   const goalOverride = useProfile((s) => s.goalOverride);
   const setProfile = useProfile((s) => s.setProfile);
@@ -243,16 +247,18 @@ export default function Ajustes() {
             <Cabecalho icone={<Target size={20} color={tokens.agua} strokeWidth={2.5} />} titulo="Meta diária" />
 
             <View className="flex-row items-center justify-between pt-3">
+              {/* O passo é o da exibição (100 ml = 0,1 L). Com 50 dois toques
+                  seguidos mostravam o mesmo número — ver `GOAL_STEP_ML`. */}
               <Passo
-                rotulo="Diminuir 50 mililitros"
+                rotulo={`Diminuir ${GOAL_STEP_ML} mililitros`}
                 icone={<Minus size={22} color={tokens.texto} strokeWidth={3} />}
-                onPress={() => setGoalOverride(goalMl - 50)}
+                onPress={() => setGoalOverride(goalMl - GOAL_STEP_ML)}
               />
               <Text className="font-displayBold text-3xl text-texto">{formatVolume(goalMl)}</Text>
               <Passo
-                rotulo="Aumentar 50 mililitros"
+                rotulo={`Aumentar ${GOAL_STEP_ML} mililitros`}
                 icone={<Plus size={22} color={tokens.texto} strokeWidth={3} />}
-                onPress={() => setGoalOverride(goalMl + 50)}
+                onPress={() => setGoalOverride(goalMl + GOAL_STEP_ML)}
               />
             </View>
 
@@ -261,6 +267,16 @@ export default function Ajustes() {
               {formatVolume(GOAL_MIN_ML)} a {formatVolume(GOAL_MAX_ML)}: beber água em excesso
               também faz mal.
             </Text>
+
+            {/* Sem esta linha, mexer na meta depois do primeiro copo do dia não muda
+                nada na tela Hoje e parece defeito. A meta do dia é congelada de
+                propósito — ver `useTodayGoalMl`. */}
+            {metaCongeladaHoje && (
+              <Text className="pt-2 font-body text-sm text-texto-soft">
+                Você já registrou hoje, então a meta nova começa a valer amanhã. Hoje continua
+                valendo {formatVolume(metaCongeladaHoje)}.
+              </Text>
+            )}
 
             {goalOverride !== null && goalOverride !== sugerida && (
               <Pressable

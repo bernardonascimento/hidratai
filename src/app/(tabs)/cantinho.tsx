@@ -14,11 +14,11 @@ import { milestonesOf, shareText } from '@/domain/milestones';
 import { successFeedback, tapFeedback } from '@/lib/haptics';
 import { useGamification } from '@/store/useGamification';
 import { useProfile } from '@/store/useProfile';
-import { useTodayHydrationMl, useWater } from '@/store/useWater';
+import { useTodayGoalMl, useTodayHydrationMl, useWater } from '@/store/useWater';
 
 export default function Cantinho() {
   const days = useWater((s) => s.days);
-  const goalMl = useWater((s) => s.goalMl);
+  const goalMl = useTodayGoalMl();
   const totalHoje = useTodayHydrationMl();
 
   const streak = useGamification((s) => s.streak);

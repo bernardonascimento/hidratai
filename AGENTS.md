@@ -67,6 +67,16 @@ Pontos que mais se erra:
 - Cuidado com texto em coluna estreita: `WeekBars` e os rótulos do tabBar são os dois
   lugares que **não** acompanham a escala tipográfica, por falta física de largura.
   Ao mexer em um deles, meça no iPhone SE (375pt), não no simulador maior.
+- **Valor que a pessoa ajusta tem de ser gravado na granularidade em que é mostrado.**
+  A meta andava de 50 em 50 e é escrita em litros com uma decimal, ou seja de 100 em
+  100: 2950, 3000 e 3050 escrevem todos `3,0 L`, então dois toques no ± mostravam o
+  mesmo número e não havia como saber onde se parou. Deu bug em 05/08/2026 — meta em
+  3050 achando-se 3000, garrafa em `3,0 de 3,0 L` e azul, porque 3000 < 3050. O passo
+  agora é `GOAL_STEP_ML` e `clampGoal` encaixa nele. Ao mexer num passo, olhe o
+  formatador no mesmo commit.
+- **`formatPair` arredonda o bebido para baixo e a meta para cima**, e não é detalhe:
+  é o que garante que **número igual na tela signifique meta batida**. Arredondando os
+  dois lados, qualquer par dentro do mesmo décimo empata na tela com a garrafa azul.
 - Estado em Zustand com `persist` + AsyncStorage (`src/store/useWater.ts`).
 - Haptics é enhancement progressivo: sempre via `src/lib/haptics.ts`, que
   silencia falhas e não roda no web.
@@ -77,11 +87,29 @@ Pontos que mais se erra:
 - `lib/notifications.ts` lê as stores, então **nenhuma store pode importá-lo**:
   chamar `syncReminders()` de dentro de `addEntry` fecharia um ciclo. Quem chama é a
   tela.
+- **O XP de um dia é `xpOfDay(dia)`, função do dia — nunca uma soma de eventos.** Era
+  `+10` por registro e `+50` na meta, com o mesmo de volta ao desfazer, só que o ganho
+  passava pelo teto diário e a devolução não: desfazer um copo que ganhou 0 por teto
+  devolvia 10, tirados do XP de dias anteriores. Registrar e desfazer agora são só a
+  diferença entre antes e depois, e por isso `onEntryRemoved` recebe o dia nos dois
+  estados. Ao criar ganho novo, coloque a regra dentro de `xpOfDay`.
+- **Prêmio que vira moeda precisa de trava por dia, não de simetria.** Todo ganho de
+  `onEntryAdded` que dependa de `metGoalNow` é pago outra vez se o usuário desfizer e
+  registrar de novo, porque a condição volta a ser verdadeira. XP e ofensiva aguentam
+  isso porque `onEntryRemoved` desfaz na mesma medida; a **gota do Cantinho não**, porque
+  ela é gasta em elementos e não tem como voltar. Daí o `lastDropDate`: um dia paga uma
+  gota e nunca mais. Ao criar prêmio novo, pergunte primeiro se ele é gastável.
 - **"Apagar tudo" tem de zerar todo campo persistido**, inclusive os que não são
   histórico. Já escapou duas vezes: a gamificação inteira (ofensiva, XP, gotas) e a
   preferência de lembrete — esta última pior, porque `enabled: true` sobrevivendo faz o
   app notificar alguém que acabou de apagar os dados. Ao acrescentar campo em store
   persistida, olhe o reset em `ajustes.tsx` no mesmo commit.
+- **Tela de hoje lê a meta por `useTodayGoalMl()`, nunca `useWater.goalMl` cru.** A meta
+  congela no primeiro registro do dia (§4.1) e é a congelada que decide `metGoal` — logo
+  a missão de bater a meta, a ofensiva, o bônus de XP e a gota do Cantinho. Lendo a
+  corrente, a garrafa ficava verde num dia que o jogo contava como não batido, e ainda
+  dava para baixar a meta depois de beber, ganhar o dia e subir de volta. `history.ts` e
+  `notifications.ts` já faziam certo (`days[hoje]?.goalMl ?? goalMl`).
 - **Nunca chame `dayKey()` dentro de um seletor do Zustand.** O seletor só roda de
   novo quando a store muda, então às 03:00 a tela congela no dia anterior — bug real,
   achado em 30/07/2026 com o app aberto de um dia para o outro. O dia corrente vem de

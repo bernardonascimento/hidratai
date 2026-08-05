@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { OnboardingStep } from '@/components/OnboardingStep';
 import { Stepper } from '@/components/Stepper';
-import { GOAL_MAX_ML, GOAL_MIN_ML } from '@/domain/goal';
+import { GOAL_MAX_ML, GOAL_MIN_ML, GOAL_STEP_ML } from '@/domain/goal';
 import { formatVolume } from '@/lib/format';
 import { tapFeedback } from '@/lib/haptics';
 import { useProfile, useSuggestedGoal } from '@/store/useProfile';
@@ -55,7 +55,7 @@ export default function Meta() {
           <Stepper
             value={metaExibida}
             onChange={setGoalOverride}
-            step={50}
+            step={GOAL_STEP_ML}
             min={GOAL_MIN_ML}
             max={GOAL_MAX_ML}
             unitLabel="mililitros"
