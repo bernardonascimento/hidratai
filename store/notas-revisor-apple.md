@@ -71,7 +71,8 @@ OBSERVAÇÕES
 Anotado antes de acontecer, porque nos dois casos a resposta é curta e a espera é longa:
 
 **"Guideline 2.1 — precisamos entender o cálculo da meta"** ou algo sobre conteúdo médico.
-Responder que a fórmula é `peso × 35 ml + ajuste de atividade + ajuste de clima`, limitada
+Responder que a fórmula é `peso × 35 ml + ajuste de atividade + ajuste de clima` — **sem
+nenhum termo de sexo, que o app não pergunta nem armazena** —, limitada
 entre 1,2 L e 4 L e arredondada a 100 ml, que é heurística de app de hábito, que o app diz
 isso em duas telas, e que não há integração com HealthKit nem afirmação clínica em nenhum
 lugar.

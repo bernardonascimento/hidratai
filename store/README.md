@@ -8,7 +8,8 @@ store/
 ├─ privacidade-questionarios.md # App Privacy (Apple) e Data Safety (Google), respondidos
 ├─ notas-revisor-apple.md       # App Review Information → Notes
 ├─ appstore/
-│  └─ iphone/                   # 1290×2796 (6.9") — o único tamanho obrigatório na Apple
+│  ├─ iphone/                   # 1290×2796 (6.9")
+│  └─ ipad/                     # 2064×2752 (13") — obrigatório com supportsTablet: true
 └─ play/
    ├─ icon-512.png              # 512×512, sem alfa — obrigatório
    ├─ feature-graphic.png       # 1024×500 — obrigatório
@@ -23,15 +24,14 @@ store/
 | ----------------------- | -------------------------------- | ------------------------------- |
 | Ícone                   | 1024×1024 no binário             | 512×512 no console, **sem alfa** |
 | Capturas de celular     | 6.9" (1290×2796), 3 a 10         | 2 a 8, lado ≥ 320px             |
-| Capturas de tablet      | só se `supportsTablet: true`     | opcionais, recomendadas          |
+| Capturas de tablet      | 13" (2064×2752), obrigatória     | opcionais, recomendadas          |
 | Feature graphic         | não existe                       | 1024×500, **obrigatório**        |
 | Vídeo                   | opcional                         | opcional (YouTube)              |
 
-**Não geramos captura de iPad**, e é de propósito: o `app.json` tem
-`ios.supportsTablet: false`, então o app é iPhone-only e roda no iPad em modo de
-compatibilidade. A Apple não pede captura de iPad nesse caso. Ao ligar `supportsTablet`,
-passa a pedir 13" (2064×2752) — e aí o layout de tablet precisa ser olhado no iPad, não só
-no Android.
+**O iPad é suportado desde 07/08/2026** (`ios.supportsTablet: true`), então a Apple
+**exige** captura de 13" (2064×2752) junto com a de iPhone. Antes disso o app era
+iPhone-only e rodava no iPad em modo de compatibilidade — uma janela de iPhone ampliada, sem
+a folga lateral nem a garrafa grande.
 
 ## Como as capturas foram feitas
 

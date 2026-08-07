@@ -40,6 +40,22 @@ Pontos que mais se erra:
 - **Lip 3D de 4px sem blur** em tudo que é pressável (`borderBottomWidth`), com
   `translateY` no press — veja `src/components/Button.tsx` como referência.
 - **Uma decisão por tela**, alvos ≥ 64px, texto curto, sem parágrafo explicativo.
+- **Retrato é travado, e a trava vive no `plugins/withRetratoEmTelaGrande.js`, não no
+  `app.json`.** Duas razões, as duas descobertas olhando o arquivo gerado: no Android
+  o `targetSdk 36` faz o sistema **ignorar** `screenOrientation` em telas ≥ 600dp, e no
+  iOS o Expo **sobrescreve** `UISupportedInterfaceOrientations~ipad` com as quatro
+  orientações quando `supportsTablet: true`. Ao mexer em orientação, confira o
+  `Info.plist` e o manifesto **merged** — o `app.json` não conta a verdade.
+- **Tela grande (≥ 600dp) ganha 60dp de folga lateral**, via `useGutterTelaGrande`, e a
+  folga vai na **cena** de cada navegador, nunca no container raiz: o `AppBackground` é
+  `absoluteFill` e filho absoluto se posiciona pela borda interna do pai, então folga no
+  raiz empurraria as ondas para dentro. A tabBar também fica de fora — barra vai de ponta
+  a ponta. Não há mais teto de largura; a garrafa perde o teto de escala em tela grande e
+  a altura manda até o fim.
+- **O app não trata sexo.** Havia um `+250 ml se homem` em `computeGoal` que nenhuma tela
+  conseguia acionar; saiu em 07/08/2026 por decisão de produto, com migração que apaga o
+  campo do disco. Não reintroduza sem uma pergunta de verdade e sem revisar a ficha de
+  privacidade das lojas.
 - Animar só `transform`/`opacity` e sempre checar `useReducedMotion()`.
 
 ## Convenções de código

@@ -3,7 +3,8 @@
 Respostas prontas para os formulários de privacidade da Apple e do Google.
 
 Base: o Hidrataí **não coleta nem compartilha nenhum dado do usuário**. Peso, rotina de
-sono, meta, histórico de copos, ofensiva, XP e o Cantinho ficam **apenas no aparelho**, no
+sono, meta, histórico de copos, ofensiva, XP e o Cantinho ficam **apenas no aparelho**
+(e sexo nem é perguntado: o campo saiu do app em 07/08/2026), no
 armazenamento do próprio app, e não são enviados para lugar nenhum. Não há conta, não há
 servidor, não há analytics e não há anúncio. Coerente com https://hidratai.app.br/privacidade
 

@@ -1,7 +1,7 @@
 // Meta diária — §4.1 do plano.
 // É heurística de app de hábito, não prescrição clínica.
 
-import type { Activity, Climate, Sex } from './types';
+import type { Activity, Climate } from './types';
 
 export const GOAL_MIN_ML = 1200;
 export const GOAL_MAX_ML = 4000;
@@ -61,23 +61,29 @@ const ACTIVITY_BONUS: Record<Activity, number> = {
 
 /**
  * Meta diária a partir do perfil (§4.1):
- * `peso*35 + (homem ? 250) + atividade + (clima quente ? 500)`, ajustada ao passo
- * de 100 e limitada a 1200–4000.
+ * `peso*35 + atividade + (clima quente ? 500)`, ajustada ao passo de 100 e limitada
+ * a 1200–4000.
+ *
+ * **Sexo não entra, e o app não pergunta.** Havia um `+250 se homem` aqui, e ele era
+ * inalcançável: `sex` nunca teve tela — nem no onboarding nem em Ajustes — então todo
+ * perfil valia o padrão `'na'` e o termo nunca somava nada. Achado em 07/08/2026.
+ *
+ * Removido em vez de ganhar uma pergunta, por decisão de produto: o app não trata sexo.
+ * Como ninguém conseguia gravar `'m'`, **nenhuma meta existente muda** — é remoção de
+ * código morto, não mudança de comportamento.
  *
  * É heurística de app de hábito — a tela de resultado do onboarding diz isso.
  */
 export function computeGoal(profile: {
   weightKg: number;
-  sex: Sex;
   activity: Activity;
   climate: Climate;
 }): number {
   const base = profile.weightKg * 35;
-  const porSexo = profile.sex === 'm' ? 250 : 0;
   const porAtividade = ACTIVITY_BONUS[profile.activity];
   const porClima = profile.climate === 'quente' ? 500 : 0;
 
-  return clampGoal(base + porSexo + porAtividade + porClima);
+  return clampGoal(base + porAtividade + porClima);
 }
 
 /** Nível a partir do XP (§7.2). O XP não compra nada — só existe. */

@@ -2,13 +2,11 @@
 // Tudo é armazenado em ml; `oz` é só formatação (§4.3).
 
 export type Unit = 'ml' | 'oz';
-export type Sex = 'f' | 'm' | 'na';
 export type Activity = 'baixa' | 'media' | 'alta';
 export type Climate = 'temperado' | 'quente';
 
 export interface Profile {
   weightKg: number; // 30–250
-  sex: Sex;
   activity: Activity;
   climate: Climate;
   wakeMinutes: number; // minutos desde 00:00, ex. 7*60

@@ -1,4 +1,4 @@
-const { withAndroidManifest } = require('expo/config-plugins');
+const { withAndroidManifest, withInfoPlist } = require('expo/config-plugins');
 
 /**
  * Mantém o app **em retrato nos tablets Android**.
@@ -30,7 +30,36 @@ const { withAndroidManifest } = require('expo/config-plugins');
  */
 const PROPRIEDADE = 'android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY';
 
-module.exports = function withRetratoEmTelaGrande(config) {
+/** As duas chaves de orientação do Info.plist: a geral e a específica de iPad. */
+const CHAVES_IOS = [
+  'UISupportedInterfaceOrientations',
+  'UISupportedInterfaceOrientations~ipad',
+];
+
+const SO_RETRATO = ['UIInterfaceOrientationPortrait'];
+
+/**
+ * Retrato no iPhone e no iPad.
+ *
+ * Precisa ser plugin porque `ios.infoPlist` no `app.json` **não basta**: com
+ * `supportsTablet: true`, o próprio Expo escreve
+ * `UISupportedInterfaceOrientations~ipad` com as quatro orientações e passa por cima do
+ * que está declarado ali. Verificado no `Info.plist` gerado em 07/08/2026 — a chave
+ * voltou com paisagem depois de ligar o iPad, silenciosamente.
+ *
+ * Rodando como mod, isto se aplica **depois** dele, então é a última palavra.
+ *
+ * Também deixa `PortraitUpsideDown` de fora, que o `orientation: "portrait"` do Expo
+ * inclui: de cabeça para baixo não é "em pé".
+ */
+function comRetratoNoIos(config) {
+  return withInfoPlist(config, (cfg) => {
+    for (const chave of CHAVES_IOS) cfg.modResults[chave] = [...SO_RETRATO];
+    return cfg;
+  });
+}
+
+function comRetratoNoAndroid(config) {
   return withAndroidManifest(config, (cfg) => {
     const application = cfg.modResults.manifest.application?.[0];
 
@@ -57,4 +86,8 @@ module.exports = function withRetratoEmTelaGrande(config) {
 
     return cfg;
   });
+}
+
+module.exports = function withRetratoEmTelaGrande(config) {
+  return comRetratoNoIos(comRetratoNoAndroid(config));
 };

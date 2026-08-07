@@ -4,14 +4,13 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { clampGoal, computeGoal } from '@/domain/goal';
 import { DEFAULT_REMINDERS, type ReminderPrefs } from '@/domain/reminders';
-import type { Activity, Climate, Profile, Sex, Unit } from '@/domain/types';
+import type { Activity, Climate, Profile, Unit } from '@/domain/types';
 import { useWater } from '@/store/useWater';
 
-export const PROFILE_VERSION = 2;
+export const PROFILE_VERSION = 3;
 
 export const DEFAULT_PROFILE: Profile = {
   weightKg: 70,
-  sex: 'na',
   activity: 'baixa',
   climate: 'temperado',
   wakeMinutes: 7 * 60,
@@ -84,11 +83,30 @@ export const useProfile = create<ProfileState>()(
        * v1 -> v2: só acrescenta `reminders`. Aditiva de propósito — quem já usa o
        * app mantém peso, rotina e meta, e cai no padrão de lembrete desligado (a
        * permissão dele nunca foi pedida).
+       *
+       * v2 -> v3: **apaga `sex` do disco.** O campo saiu do modelo em 07/08/2026, e sem
+       * esta limpeza ele sobreviveria para sempre: o `setProfile` faz spread do perfil
+       * carregado, então uma chave órfã é lida e regravada em cada alteração. Sem
+       * apagar, o app continuaria guardando um dado que decidimos não tratar — e a ficha
+       * de privacidade das lojas diz o que ele guarda.
        */
       migrate: (persisted, version) => {
-        const estado = (persisted ?? {}) as Partial<ProfileState>;
-        if (version >= 2) return estado as ProfileState;
-        return { ...estado, reminders: DEFAULT_REMINDERS } as ProfileState;
+        const estado = (persisted ?? {}) as Partial<ProfileState> & {
+          profile?: Record<string, unknown>;
+        };
+        const comLembretes =
+          version >= 2 ? estado : { ...estado, reminders: DEFAULT_REMINDERS };
+
+        if (version >= 3) return comLembretes as ProfileState;
+
+        // `sex` fora, o resto do perfil intacto. O tipo é `Record` porque `sex` já não
+        // existe em `Profile` — desestruturar do tipo novo não compilaria.
+        const perfilAntigo: Record<string, unknown> = comLembretes.profile ?? {};
+        const { sex: _sex, ...perfilLimpo } = perfilAntigo;
+        return {
+          ...comLembretes,
+          profile: { ...DEFAULT_PROFILE, ...perfilLimpo },
+        } as ProfileState;
       },
       partialize: (state) => ({
         profile: state.profile,
@@ -105,4 +123,4 @@ export function useSuggestedGoal(): number {
   return useProfile((s) => computeGoal(s.profile));
 }
 
-export type { Activity, Climate, Sex, Unit };
+export type { Activity, Climate, Unit };

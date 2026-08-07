@@ -13,20 +13,11 @@ import {
 } from '@/domain/goal';
 
 describe('computeGoal (§4.1)', () => {
-  const base = { weightKg: 70, sex: 'na', activity: 'baixa', climate: 'temperado' } as const;
+  const base = { weightKg: 70, activity: 'baixa', climate: 'temperado' } as const;
 
   it('usa peso * 35 no caso mais simples', () => {
     // 70*35 = 2450 -> 2500 no passo de 100
     expect(computeGoal(base)).toBe(2500);
-  });
-
-  it('soma 250 para homem', () => {
-    expect(computeGoal({ ...base, sex: 'm' })).toBe(2700);
-  });
-
-  it('não soma nada para feminino nem para não informado', () => {
-    expect(computeGoal({ ...base, sex: 'f' })).toBe(2500);
-    expect(computeGoal({ ...base, sex: 'na' })).toBe(2500);
   });
 
   it('soma o bônus de atividade', () => {
@@ -39,8 +30,8 @@ describe('computeGoal (§4.1)', () => {
   });
 
   it('acumula todos os bônus', () => {
-    // 2450 + 250 + 700 + 500 = 3900
-    expect(computeGoal({ weightKg: 70, sex: 'm', activity: 'alta', climate: 'quente' })).toBe(3900);
+    // 2450 + 700 + 500 = 3650 -> 3700 no passo de 100
+    expect(computeGoal({ weightKg: 70, activity: 'alta', climate: 'quente' })).toBe(3700);
   });
 
   it('sempre cai num múltiplo de 100 — o mesmo passo que a tela mostra', () => {
@@ -53,7 +44,7 @@ describe('computeGoal (§4.1)', () => {
     // volta o valor que a tela não consegue escrever.
     for (let peso = 30; peso <= 250; peso += 1) {
       for (const activity of ['baixa', 'media', 'alta'] as const) {
-        const meta = computeGoal({ weightKg: peso, sex: 'm', activity, climate: 'quente' });
+        const meta = computeGoal({ weightKg: peso, activity, climate: 'quente' });
         expect(meta % GOAL_STEP_ML).toBe(0);
       }
     }
@@ -65,9 +56,7 @@ describe('computeGoal (§4.1)', () => {
   });
 
   it('respeita o teto para os extremos', () => {
-    expect(
-      computeGoal({ weightKg: 250, sex: 'm', activity: 'alta', climate: 'quente' }),
-    ).toBe(GOAL_MAX_ML);
+    expect(computeGoal({ weightKg: 250, activity: 'alta', climate: 'quente' })).toBe(GOAL_MAX_ML);
   });
 });
 
