@@ -31,6 +31,7 @@ if (!UDID) {
 // checagem do UDID, para o erro de uso vir antes do erro de dependência.
 let sharp;
 try {
+  // eslint-disable-next-line import/no-unresolved -- de propósito: ver o comentário acima.
   ({ default: sharp } = await import('sharp'));
 } catch {
   console.error('falta o sharp. rode: npm i --no-save sharp');
