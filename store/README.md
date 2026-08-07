@@ -8,8 +8,8 @@ store/
 ├─ privacidade-questionarios.md # App Privacy (Apple) e Data Safety (Google), respondidos
 ├─ notas-revisor-apple.md       # App Review Information → Notes
 ├─ appstore/
-│  ├─ iphone/                   # 1290×2796 (6.9")
-│  └─ ipad/                     # 2064×2752 (13") — obrigatório com supportsTablet: true
+│  ├─ iphone/                   # 1320×2868 (6.9", iPhone 16 Pro Max) — 5 telas
+│  └─ ipad/                     # 2064×2752 (13") — só a tela Hoje, ver a ressalva abaixo
 └─ play/
    ├─ icon-512.png              # 512×512, sem alfa — obrigatório
    ├─ feature-graphic.png       # 1024×500 — obrigatório
@@ -23,7 +23,7 @@ store/
 | Item                    | Apple                            | Google Play                     |
 | ----------------------- | -------------------------------- | ------------------------------- |
 | Ícone                   | 1024×1024 no binário             | 512×512 no console, **sem alfa** |
-| Capturas de celular     | 6.9" (1290×2796), 3 a 10         | 2 a 8, lado ≥ 320px             |
+| Capturas de celular     | 6.9": 1290×2796 **ou** 1320×2868 | 2 a 8, lado ≥ 320px             |
 | Capturas de tablet      | 13" (2064×2752), obrigatória     | opcionais, recomendadas          |
 | Feature graphic         | não existe                       | 1024×500, **obrigatório**        |
 | Vídeo                   | opcional                         | opcional (YouTube)              |
@@ -65,7 +65,15 @@ adb shell "sqlite3 /data/data/com.bernardo.hidratai/databases/RKStorage < /data/
 adb shell date 080711002026.00                          # a data do aparelho tem de casar com o "hoje" semeado
 ```
 
-Duas armadilhas que custaram tempo:
+**As capturas de iPad estão incompletas: só a tela Hoje.** Faltam Histórico, Cantinho e
+Conquistas, e a razão é ferramenta, não app: no simulador de iPad o `simctl openurl` abre um
+alerta do sistema *"Abrir com 'Hidrataí'?"* que cobre a tela e **sobrevive a reiniciar o
+app** — só um reboot do simulador limpa. No iPhone o mesmo deep link passa direto. E o
+`simctl io tap` não existe nesta versão do Xcode, nem o System Events alcança o conteúdo do
+simulador (só os menus dele). O caminho que resta é tocar nas abas à mão com o simulador
+aberto e rodar `xcrun simctl io <udid> screenshot`. São quatro toques.
+
+Três armadilhas que custaram tempo:
 
 - **`screencap` captura o display, não a janela do app.** Ao testar a trava de orientação,
   a captura saiu 2560×1600 e pareceu que o app tinha girado — ele estava em retrato,
@@ -73,6 +81,10 @@ Duas armadilhas que custaram tempo:
   `adb shell dumpsys activity <pkg> | grep mAppBounds`.
 - **`accelerometer_rotation` volta para 1** sozinho ao reiniciar o app. Sem desligar antes,
   `user_rotation` é ignorado e o teste de rotação não testa nada.
+- **App com retrato travado fica preso na orientação em que abriu.** Depois de testar
+  rotação no iPad, o app abriu de cabeça para baixo e não voltou — justamente porque não
+  gira. Antes de capturar, confira a marca de seleção em Device › Orientation, e no limite
+  reinicie o simulador.
 
 ## Ao mudar a UI, estas capturas envelhecem
 

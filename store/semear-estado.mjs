@@ -107,9 +107,13 @@ const agua = {
   lastMetDate: days[diaDe(1)]?.metGoal ? diaDe(1) : null,
 };
 
+// As versões têm de acompanhar as constantes das stores (`WATER_VERSION`,
+// `PROFILE_VERSION`, `GAMIFICATION_VERSION`). Gravar uma versão velha faz o app rodar
+// migração em cima de dado que já nasceu no formato novo — funciona, mas esconde erro:
+// o estado semeado deixa de testar o caminho que o usuário real percorre.
 const perfil = {
   profile: {
-    weightKg: 78, sex: 'na', activity: 'media', climate: 'temperado',
+    weightKg: 78, activity: 'media', climate: 'temperado',
     wakeMinutes: 7 * 60, sleepMinutes: 23 * 60, unit: 'ml',
   },
   goalOverride: null,
@@ -141,7 +145,7 @@ const envelope = (state, version) => JSON.stringify({ state, version });
 
 console.log(JSON.stringify({
   'beba-agua/v1': envelope(agua, 1),
-  'hidratai/profile': envelope(perfil, 2),
+  'hidratai/profile': envelope(perfil, 3),
   'hidratai/gamification': envelope(jogo, 1),
   'hidratai/settings': envelope({ hapticsEnabled: true, forceReducedMotion: false }, 1),
 }));
