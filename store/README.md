@@ -9,7 +9,7 @@ store/
 ├─ notas-revisor-apple.md       # App Review Information → Notes
 ├─ appstore/
 │  ├─ iphone/                   # 1320×2868 (6.9", iPhone 16 Pro Max) — 5 telas
-│  └─ ipad/                     # 2064×2752 (13") — só a tela Hoje, ver a ressalva abaixo
+│  └─ ipad/                     # 2064×2752 (13") — 4 telas
 └─ play/
    ├─ icon-512.png              # 512×512, sem alfa — obrigatório
    ├─ feature-graphic.png       # 1024×500 — obrigatório
@@ -65,13 +65,18 @@ adb shell "sqlite3 /data/data/com.bernardo.hidratai/databases/RKStorage < /data/
 adb shell date 080711002026.00                          # a data do aparelho tem de casar com o "hoje" semeado
 ```
 
-**As capturas de iPad estão incompletas: só a tela Hoje.** Faltam Histórico, Cantinho e
-Conquistas, e a razão é ferramenta, não app: no simulador de iPad o `simctl openurl` abre um
-alerta do sistema *"Abrir com 'Hidrataí'?"* que cobre a tela e **sobrevive a reiniciar o
-app** — só um reboot do simulador limpa. No iPhone o mesmo deep link passa direto. E o
-`simctl io tap` não existe nesta versão do Xcode, nem o System Events alcança o conteúdo do
-simulador (só os menus dele). O caminho que resta é tocar nas abas à mão com o simulador
-aberto e rodar `xcrun simctl io <udid> screenshot`. São quatro toques.
+**No iPad, navegar entre abas exige mão humana.** Três caminhos não funcionam: o
+`simctl openurl` abre um alerta do sistema *"Abrir com 'Hidrataí'?"* que cobre a tela e
+**sobrevive a reiniciar o app** (só um reboot do simulador limpa), o `simctl io tap` não
+existe nesta versão do Xcode, e o System Events alcança os menus do Simulator mas não o
+conteúdo dele. No iPhone o mesmo deep link passa direto — a diferença é do iPad.
+
+A solução é o `store/capturar-ipad.mjs`: um laço que fica lendo a barra de abas e
+**grava sozinho** quando vê uma aba que falta, enquanto a pessoa clica sem pressa. A aba
+ativa é identificada pela cor (`#1CB0F6` na ativa, `#AFAFAF` nas outras), com duas leituras
+iguais antes de salvar para não pegar o meio da transição, e recusa a captura se a tela
+estiver escurecida por alerta. A primeira versão era uma janela fixa de 2 minutos e expirou
+antes do clique: 90 quadros da mesma aba. Sem janela, funciona.
 
 Três armadilhas que custaram tempo:
 
