@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8">
+<!--
+  Feature graphic do Google Play — 1024×500, obrigatório.
+
+  Reaproveita a **silhueta de verdade** do app: o path da garrafa vem de
+  `src/components/ProgressBottle.tsx` (viewBox 140×248) e a Gotinha de
+  `src/components/Gotinha.tsx`. Redesenhar de cabeça daria uma garrafa parecida e errada.
+
+  Duas regras do Play que mandam no desenho:
+
+  - **O texto tem de caber no meio.** O Play recorta esta imagem em proporções diferentes
+    conforme a superfície, e às vezes sobrepõe um botão de play no centro. Por isso a
+    margem é generosa e nada essencial encosta na borda.
+  - **Sem screenshot dentro e sem "5 estrelas"/"nº 1"**: o Play remove feature graphic que
+    finge ser captura de tela ou que alega prêmio.
+
+  Fundo é o azul do ícone (#0EA5E9), não o `fundo` claro das telas: aqui a imagem aparece
+  contra o branco da loja e precisa de peso.
+-->
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1024px; height:500px; overflow:hidden; }
+  .wrap {
+    width:1024px; height:500px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 72px 0 76px;
+    background: linear-gradient(135deg, #0EA5E9 0%, #1CB0F6 55%, #38BDF8 100%);
+    color:#FFFFFF;
+    font-family: "Fredoka", "Nunito", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    position:relative; overflow:hidden;
+  }
+  /* As bolhas do fundo do app, em branco translúcido. Cenário, não conteúdo. */
+  .bolha { position:absolute; border-radius:50%; background:rgba(255,255,255,.13); }
+  .left { display:flex; flex-direction:column; position:relative; z-index:1; }
+  .brand { display:flex; align-items:center; gap:18px; margin-bottom:26px; }
+  .brand img { width:64px; height:64px; border-radius:15px; }
+  .brand span { font-size:40px; font-weight:700; letter-spacing:-1px; }
+  .head { font-size:54px; font-weight:700; line-height:1.04; letter-spacing:-1.5px; }
+  .head .soft { color:#DDF4FF; }
+  .sub { font-size:21px; color:#E4F5FE; margin-top:24px; font-weight:600; }
+  .right { position:relative; z-index:1; display:flex; align-items:center; gap:22px; }
+</style></head>
+<body>
+  <div class="wrap">
+    <div class="bolha" style="width:190px;height:190px;left:-60px;top:-70px"></div>
+    <div class="bolha" style="width:120px;height:120px;left:120px;bottom:-56px"></div>
+    <div class="bolha" style="width:74px;height:74px;left:430px;top:34px"></div>
+    <div class="bolha" style="width:150px;height:150px;right:-40px;bottom:-60px"></div>
+
+    <div class="left">
+      <div class="brand">
+        <img src="./icon-512.png" alt="">
+        <span>Hidrataí</span>
+      </div>
+      <div class="head">Beber água todo dia,<br><span class="soft">sem esforço</span></div>
+      <div class="sub">Lembretes na hora certa · Sem conta · Offline</div>
+    </div>
+
+    <div class="right">
+      <!-- Garrafa: mesmo viewBox e mesmo path do app, cheia até a meta e portanto verde. -->
+      <svg width="196" height="347" viewBox="0 0 140 248" fill="none">
+        <defs>
+          <clipPath id="dentro">
+            <path d="M 42 16 H 98 V 46 C 98 64 131 62 131 84 V 216 C 131 230 125 236 111 236 H 29 C 15 236 9 230 9 216 V 84 C 9 62 42 64 42 46 Z"/>
+          </clipPath>
+        </defs>
+
+        <!-- Corpo -->
+        <path d="M 42 16 H 98 V 46 C 98 64 131 62 131 84 V 216 C 131 230 125 236 111 236 H 29 C 15 236 9 230 9 216 V 84 C 9 62 42 64 42 46 Z"
+              fill="#FFFFFF" stroke="#E5E5E5" stroke-width="5"/>
+
+        <!-- Água: verde de meta batida, o único lugar onde o verde entra. -->
+        <g clip-path="url(#dentro)">
+          <rect x="0" y="70" width="140" height="180" fill="#22C55E"/>
+          <path d="M0 70 C 17.5 62, 52.5 78, 70 70 C 87.5 62, 122.5 78, 140 70 V 82 H 0 Z" fill="#22C55E"/>
+        </g>
+
+        <!-- Tampa -->
+        <rect x="44" y="8" width="52" height="26" rx="8" fill="#F7F7F7" stroke="#E5E5E5" stroke-width="4"/>
+
+        <!-- O número, como o app escreve: bebido / meta, na mesma unidade. -->
+        <text x="70" y="150" text-anchor="middle" fill="#FFFFFF"
+              font-family="Fredoka, system-ui, sans-serif" font-weight="700" font-size="38">3,0</text>
+        <text x="70" y="176" text-anchor="middle" fill="#FFFFFF"
+              font-family="Nunito, system-ui, sans-serif" font-weight="600" font-size="16">de 3,0 L</text>
+      </svg>
+
+      <!--
+        A Gotinha ao lado da garrafa, **branca**.
+
+        No app ela é azul (#1CB0F6), e aqui isso não funciona: azul sobre fundo azul
+        desaparece — na primeira tentativa sobrou só o rosto dela flutuando. É o mesmo
+        problema que o ícone do app resolveu escolhendo a gota branca sobre #0EA5E9, e a
+        resposta aqui é a mesma. O corpo branco também casa com a garrafa branca ao lado.
+
+        Os olhos e a boca ficam no azul-fundo (#1899D6) em vez do cinza do app: cinza
+        sobre branco sobre azul cria uma terceira cor sem motivo.
+      -->
+      <svg width="118" height="118" viewBox="0 0 100 100" fill="none">
+        <path d="M50 6 C 50 6 84 46 84 62 A 34 34 0 1 1 16 62 C 16 46 50 6 50 6 Z" fill="#FFFFFF"/>
+        <ellipse cx="50" cy="70" rx="21" ry="16" fill="#DDF4FF"/>
+        <path d="M31 59 Q38 50 45 59" stroke="#1899D6" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M55 59 Q62 50 69 59" stroke="#1899D6" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M40 70 Q50 84 60 70 Z" fill="#0EA5E9" stroke="#1899D6" stroke-width="2.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

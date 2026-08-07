@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { TabDrop } from '@/components/TabDrop';
 import { tokens } from '@/design/tokens';
+import { useGutterTelaGrande } from '@/design/telaGrande';
 
 export const unstable_settings = { initialRouteName: 'index' };
 
@@ -68,12 +69,17 @@ function AbaCentral() {
 }
 
 export default function TabsLayout() {
+  const gutter = useGutterTelaGrande();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         // Sem isto o navigator pinta a cena e esconde o AppBackground.
-        sceneStyle: { backgroundColor: 'transparent' },
+        // A folga de tela grande vai na **cena**, não na barra: assim o conteúdo
+        // respira nas laterais e a tabBar continua de ponta a ponta, que é o que uma
+        // barra faz. O `AppBackground` vive acima daqui e também segue sangrando.
+        sceneStyle: { backgroundColor: 'transparent', paddingHorizontal: gutter },
         tabBarActiveTintColor: tokens.agua,
         tabBarInactiveTintColor: tokens.textoOff,
         tabBarStyle: {

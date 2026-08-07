@@ -29,7 +29,6 @@ export const tokens = {
    *  cards ficam em `canvas` por cima, e é esse degrau que dá profundidade. */
   fundo: '#F2FAFE',
   canvas: '#FFFFFF',
-  moldura: '#E8EAED',
 } as const;
 
 /** Altura do "lip" 3D: sombra sólida sem blur, a marca registrada do sistema. */
@@ -46,6 +45,3 @@ export const LIP = 4;
 export const LIP_PRESSED = 2;
 
 export const RADIUS = { card: 16, pill: 9999 } as const;
-
-/** Largura máxima do container — o app é sempre um retrato tipo celular. */
-export const MAX_WIDTH = 480;

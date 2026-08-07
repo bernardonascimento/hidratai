@@ -26,7 +26,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppBackground } from '@/components/AppBackground';
 import { Toast } from '@/components/Toast';
-import { MAX_WIDTH } from '@/design/tokens';
 import { WATER_DRINK_ID } from '@/domain/drinks';
 import { semearConquistasVistas } from '@/lib/celebrate';
 import { msUntilNextLogicalDay } from '@/lib/date';
@@ -56,8 +55,18 @@ const TEMA_TRANSPARENTE = {
 };
 
 /**
- * O iPhone não permite travar orientação por API — então travamos por design:
- * em paisagem apertada o conteúdo dá lugar a um pedido para girar o aparelho.
+ * Rede de segurança para uma janela larga e baixa.
+ *
+ * A orientação **é** travada em retrato desde 07/08/2026, nos dois sistemas: no iOS por
+ * `UISupportedInterfaceOrientations` e no Android por `screenOrientation` mais o opt-out
+ * do plugin `withRetratoEmTelaGrande`. Então girar o aparelho não chega mais aqui.
+ *
+ * Isto continua existindo porque **girar não é o único jeito de ganhar uma janela
+ * deitada**: tela dividida em tablet, o modo desktop do Android 16 e um dobrável
+ * entreaberto entregam formatos que a trava de orientação não governa. Custa duas
+ * `<Text>` e evita a tela toda amassada nesses casos.
+ *
+ * Não apague por parecer inalcançável — pelo caminho do usuário girando o aparelho, é.
  */
 function AvisoPaisagem() {
   return (
@@ -238,9 +247,14 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider value={TEMA_TRANSPARENTE}>
         <StatusBar style="dark" />
-      {/* Fundo da moldura: em telas largas o app fica emoldurado, nunca esticado. */}
-      <View className="flex-1 items-center bg-moldura">
-        <View className="w-full flex-1 overflow-hidden bg-fundo" style={{ maxWidth: MAX_WIDTH }}>
+        {/* O app ocupa a largura inteira, inclusive em tablet.
+            Havia um teto de 480dp aqui, com moldura cinza nas laterais. Num tablet de
+            1067dp aquilo virava 480 de app e 587 de cinza, e lia como defeito em vez de
+            escolha. Decisão de 07/08/2026: preencher.
+            Preço aceito com conhecimento: a tela foi afinada para 375–430dp, então em
+            tablet os cartões de volume e as barras da semana ficam largos. Nada quebra —
+            fica largo. A garrafa não acompanha, porque a escala dela tem teto em 1,85. */}
+        <View className="flex-1 overflow-hidden bg-fundo">
           {paisagemApertada ? (
             <AvisoPaisagem />
           ) : (
@@ -269,7 +283,6 @@ export default function RootLayout() {
               />
             </>
           )}
-          </View>
         </View>
       </ThemeProvider>
     </SafeAreaProvider>

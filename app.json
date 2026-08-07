@@ -15,7 +15,13 @@
         "CFBundleLocalizations": [
           "pt-BR"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait"
+        ]
       }
     },
     "android": {
@@ -38,6 +44,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withRetratoEmTelaGrande",
       "expo-dev-client",
       "expo-router",
       [

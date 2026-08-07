@@ -21,7 +21,6 @@ module.exports = {
         // Superfície das telas: azul-água diluído, mais claro que qualquer onda.
         fundo: '#F2FAFE',
         canvas: '#FFFFFF',
-        moldura: '#E8EAED',
       },
       /**
        * Em React Native cada arquivo de fonte é uma **família própria**, então o peso

@@ -15,6 +15,7 @@ import { BOTTLE_VIEWBOX, ProgressBottle } from '@/components/ProgressBottle';
 import { StatusHud } from '@/components/StatusHud';
 
 import { VolumeCard } from '@/components/VolumeCard';
+import { useGutterTelaGrande } from '@/design/telaGrande';
 import { tokens } from '@/design/tokens';
 import { WATER_DRINK_ID } from '@/domain/drinks';
 import { mascotMood, mascotPhrase } from '@/domain/mascot';
@@ -77,8 +78,28 @@ const ESCALA_MIN = 0.85;
 /**
  * Teto. Subiu de 1,75 para 1,85 para o Pro Max aproveitar a altura que tem: ele batia
  * no teto com 62pt de folga sobrando, ou seja, o limite estava desperdiçando tela.
+ *
+ * Vale **só no celular**. Ver `ESCALA_SEM_TETO`.
  */
 const ESCALA_MAX = 1.85;
+
+/**
+ * Em tela grande a garrafa **não tem teto**: ela cresce até encostar na altura
+ * disponível, exatamente o que o resto do arquivo já dizia que ela faz — "a garrafa é
+ * quem absorve a diferença de tela".
+ *
+ * O teto de 1,85 era calibrado para o maior iPhone. No tablet a altura permite escala
+ * 5,1, o teto travava em 1,85, e sobravam ~800dp de vazio embaixo da ação primária —
+ * reportado em 07/08/2026 com o print na mão.
+ *
+ * A largura entra só como **guarda**: a garrafa nunca fica mais larga que a coluna. Não é
+ * o limite no tablet em retrato (a altura é), mas é o que segura uma janela larga e baixa,
+ * onde sem isso a garrafa vazaria para fora.
+ */
+const ESCALA_SEM_TETO = Number.POSITIVE_INFINITY;
+
+/** Padding lateral da própria tela. Entra na conta da escala, então é nomeado. */
+const PADDING_TELA = 20;
 
 export default function Hoje() {
   // A meta **do dia**, não a corrente: é ela que decide `metGoal`, e a tela não pode
@@ -117,11 +138,31 @@ export default function Hoje() {
 
   // A garrafa é o único elemento que muda de tamanho com a tela: os espaços são
   // fixos, então é ela que absorve a diferença.
-  const { height: alturaTela } = useWindowDimensions();
+  const { width: larguraTela, height: alturaTela } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const escalaGarrafa = Math.min(
-    ESCALA_MAX,
-    Math.max(ESCALA_MIN, (alturaTela - insets.top - ALTURA_SEM_GARRAFA) / BOTTLE_VIEWBOX.h),
+  const gutter = useGutterTelaGrande();
+
+  /**
+   * Escala da garrafa. A **altura** manda, como sempre mandou.
+   *
+   * O que muda em tela grande é o teto: no celular ele é `ESCALA_MAX` (1,85, calibrado
+   * para o Pro Max) e no tablet não existe, então a garrafa cresce até encostar na altura.
+   * Num tablet de 1707dp isso leva a escala para ~5,1 e fecha o vazio de ~800dp que havia
+   * embaixo da ação primária.
+   *
+   * A largura é uma **guarda**, não o objetivo: a garrafa não pode ficar mais larga que a
+   * coluna. Em retrato quem limita é a altura; a largura só age em janela larga e baixa.
+   */
+  const porAltura = (alturaTela - insets.top - ALTURA_SEM_GARRAFA) / BOTTLE_VIEWBOX.h;
+  const colunaDisponivel = larguraTela - gutter * 2 - PADDING_TELA * 2;
+  const telaGrande = gutter > 0;
+  const escalaGarrafa = Math.max(
+    ESCALA_MIN,
+    Math.min(
+      telaGrande ? ESCALA_SEM_TETO : ESCALA_MAX,
+      porAltura,
+      colunaDisponivel / BOTTLE_VIEWBOX.w,
+    ),
   );
 
   const [selecionado, setSelecionado] = useState(300);
@@ -191,7 +232,7 @@ export default function Hoje() {
       <SafeAreaView className="flex-1" edges={['top']}>
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingBottom: 12 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: PADDING_TELA, paddingBottom: 12 }}
           showsVerticalScrollIndicator={false}>
           {/* HUD: nível à esquerda, ofensiva e XP à direita. O atalho fica
               **sobreposto**, não no fluxo: somar altura aqui empurrava a ação
